@@ -1,0 +1,482 @@
+<!-- index.html -->
+<!doctype html>
+<html>
+<head>
+  <title>Angular Forms</title>
+	<!-- LOAD BOOTSTRAP CSS -->
+	<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css">
+
+	<!-- LOAD JQUERY -->
+	<!-- when building an angular app, you generally DO NOT want to use jquery -->
+	<!-- we are breaking this rule here because jQuery's $.param will help us send data to our PHP script so that PHP can recognize it -->
+	<!-- this is jQuery's only use. avoid it in Angular apps and if anyone has tips on how to send data to a PHP script w/o jQuery, please state it in the comments -->
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+	<!-- LOAD ANGULAR -->
+	<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.0/angular.min.js"></script>
+
+	<!-- LOAD camanjs CDN -->
+
+	<script src="http://cdnjs.cloudflare.com/ajax/libs/camanjs/4.0.0/caman.full.min.js"></script>
+
+	<style type="text/css">
+
+	.imgContainer {
+		border:1px solid #d3d3d3;
+		width: 300px;
+		height: 300px;
+		margin: 20px;
+		float: left;
+	}
+
+	img, canvas {
+		width: 300px;
+		height: 300px;
+	}
+
+	#inputContainer {
+		max-width: 600px;
+		margin-left: 30px;
+	}
+
+	.selection {
+/*		display: block;
+		width: 600px;
+		height:50px;*/
+
+	}
+
+	#imgSelect {
+	/*	margin-left: 50px;
+		float:left;*/
+	}
+
+	#filterSelect {
+/*		margin-left: 30px;
+		float:left;*/
+	}
+
+	table {
+		margin-top: 10px;
+		/*margin-left: 30px;*/
+	}
+
+	.note {
+		/*width: 600px;*/
+		/*margin-left: 30px;*/
+	}
+
+	h5 {
+		color: #FF3232;
+	}
+	</style>
+
+</head>
+<body ng-app="myApp" ng-controller="myController">
+
+<div class="container">
+	<div class="imgContainer">
+		<img id="before" ng-src="{{selectedImg.src}}" />
+	</div>
+
+	<div class="imgContainer">
+		<canvas id="after"></canvas>
+	</div>
+
+	<div id="inputContainer">
+
+		<div class="selection">
+			<div id="imgSelect" class="col-md-4">
+				<label>Image</label>
+				<select 
+					ng-options="item.name for item in imgList" 
+					ng-model="selectedImg"
+					ng-change="updateImg()"
+					class="form-control">
+				</select>
+			</div>
+			<div id="filterSelect" class="col-md-6">
+				<label>Filter</label>
+				<select 
+					ng-options="matrix.name for matrix in matrixList" 
+					ng-model="selectedMatrix"
+					ng-change="updateMatrix()"
+					class="form-control">
+				</select>
+			</div>
+		</div>
+
+
+		<table id="matrixTable" class="table table-striped table-bordered">
+		  <tbody>
+			<tr>
+				<td><input class="form-control" type="number" ng-model="entry[0]" ng-change="entryChange()"></td>
+				<td><input class="form-control" type="number" ng-model="entry[1]" ng-change="entryChange()"></td>
+				<td><input class="form-control" type="number" ng-model="entry[2]" ng-change="entryChange()"></td>
+			</tr>
+
+			<tr>
+				<td><input class="form-control" type="number" ng-model="entry[3]" ng-change="entryChange()"></td>
+				<td><input class="form-control" type="number" ng-model="entry[4]" ng-change="entryChange()"></td>
+				<td><input class="form-control" type="number" ng-model="entry[5]" ng-change="entryChange()"></td>
+			</tr>
+
+			<tr>
+				<td><input class="form-control" type="number" ng-model="entry[6]" ng-change="entryChange()"></td>
+				<td><input class="form-control" type="number" ng-model="entry[7]" ng-change="entryChange()"></td>
+				<td><input class="form-control" type="number" ng-model="entry[8]" ng-change="entryChange()"></td>
+			</tr>
+		  </tbody>
+		</table>
+
+
+
+		<div class="note">
+			<h5>Attention: Divisor is 9 ! To maintain the brightness of the image, the sum of the matrix values should be around 9. (Thus after division, the sum becomes closed to one)  </h5>
+		</div>
+	</div>
+
+</div>
+
+	
+
+<script>
+// type="number" min="-100" max="+100"
+
+// ng-app="formApp" ng-controller="formController"
+<!-- WE WILL PROCESS OUR FORM HERE -->
+
+//Image Process Logic
+Filters = {};
+Filters.getPixels = function(img) {
+  var c = this.getCanvas(img.width, img.height);
+  var ctx = c.getContext('2d');
+  ctx.drawImage(img,0,0);
+  return ctx.getImageData(0,0,c.width,c.height);
+};
+
+Filters.getCanvas = function(w,h) {
+  var c = document.createElement('canvas');
+  c.width = w;
+  c.height = h;
+  return c;
+};
+//filterImage method in Filters scale
+//take the filter and image as argument
+Filters.filterImage = function(filter, image, var_args) {
+  var args = [this.getPixels(image)];
+  for (var i=2; i<arguments.length; i++) {
+    args.push(arguments[i]);
+  }
+  return filter.apply(null, args);
+};
+
+//convolution filters
+//temporary values
+Filters.tmpCanvas = document.createElement('canvas');
+Filters.tmpCtx = Filters.tmpCanvas.getContext('2d');
+
+Filters.createImageData = function(w,h) {
+  return this.tmpCtx.createImageData(w,h);
+};
+
+Filters.convolute = function(pixels, weights, opaque) {
+  var side = Math.round(Math.sqrt(weights.length));
+  var halfSide = Math.floor(side/2);
+
+  var src = pixels.data;
+  var sw = pixels.width;
+  var sh = pixels.height;
+
+  var w = sw;
+  var h = sh;
+  var output = Filters.createImageData(w, h);
+  var dst = output.data;
+
+  // var alphaFac = opaque ? 1 : 0;
+  console.time("matrixLoopRock");
+
+  for (var y=0; y<h; y++) {
+    for (var x=0; x<w; x++) {
+      var sy = y;
+      var sx = x;
+      var dstOff = (y*w+x)*4;
+      var r=0, g=0, b=0, a=0;
+      for (var cy=0; cy<side; cy++) {
+        for (var cx=0; cx<side; cx++) {
+          var scy = Math.min(sh-1, Math.max(0, sy + cy - halfSide));
+          var scx = Math.min(sw-1, Math.max(0, sx + cx - halfSide));
+          var srcOff = (scy*sw+scx)*4;
+          var wt = weights[cy*side+cx];
+          // r += src[srcOff] * wt;
+          // g += src[srcOff+1] * wt;
+          // b += src[srcOff+2] * wt;
+          // a += src[srcOff+3] * wt;
+        }
+      }
+      // dst[dstOff] = r;
+      // dst[dstOff+1] = g;
+      // dst[dstOff+2] = b;
+      // dst[dstOff+3] = a + alphaFac*(255-a);
+      dst[dstOff] = 0;
+      dst[dstOff+1] = 125;
+      dst[dstOff+2] = 125;
+      dst[dstOff+3] = 255;
+
+    }
+  }
+
+  console.timeEnd("matrixLoopRock");
+
+  return output;
+};
+
+
+
+Filters.myConvolute = function(greyMatrix, weights) {
+  var side = Math.round(Math.sqrt(weights.length));
+
+  var halfSide = Math.floor(side/2);
+
+  var greyLen = greyMatrix.length;
+  var sw = Math.sqrt(greyLen);
+  var sh = sw;
+
+  var w = sw;
+  var h = sh;
+
+  var retMatrix = new Uint8ClampedArray(greyLen);
+  console.time("matrixLoop");
+  for (var y=0; y<h; y++) {
+    for (var x=0; x<w; x++) {
+      var dstOff = y*w+x;
+      var r=0;
+      for (var cy=0; cy<side; cy++) {
+        for (var cx=0; cx<side; cx++) {
+          var scy = Math.min(sh-1, Math.max(0, y + cy - halfSide));
+          var scx = Math.min(sw-1, Math.max(0, x + cx - halfSide));
+          var srcOff = (scy*sw+scx);
+          var wt = weights[cy*side+cx];
+          r += greyMatrix[srcOff] * wt;
+        }
+      }
+      retMatrix[dstOff] = r;
+    }
+  }
+  console.timeEnd("matrixLoop");
+
+  return retMatrix;
+};
+
+
+// define angular module/app
+var myApp = angular.module('myApp', []);
+
+// create angular controller and pass in $scope and $http
+function myController($scope) {
+	var divisor = 9;
+
+	function scale(matrix, param) {
+		for (var i = 0; i < matrix.length; i++) {
+			matrix[i] *= param;
+		}
+		return matrix;
+	}
+
+	var sharpenMatrix = {name:"Sharpen", data:
+	scale([  0, -1,  0,
+	   -1, 5, -1,
+	   0, -1,  0 ], divisor)};
+
+
+	var blurMatrix = {name:"Blur", data:
+	  scale([ 1/9, 1/9, 1/9,
+	    1/9, 1/9, 1/9,
+	    1/9, 1/9, 1/9 ], divisor)};
+
+	var edgeDetectMatrix = {name:"Edge Detect", data:
+	scale([  0, 4, 0,
+	   4, -15, 4,
+	   0, 4, 0 ], divisor)};
+
+	var lightenMatrix = {name:"Lighten", data:
+	scale([  0, 0, 0,
+	   0, 4/3, 0,
+	   0, 0, 0 ], divisor)};
+
+
+	var darkenMatrix = {name:"Darken", data:
+	scale([  0, 0, 0,
+	   0, 2/3, 0,
+	   0, 0, 0 ], divisor)};
+
+	var embossMatrix = {name:"Emboss", data:
+	scale([  -2, -1, 0,
+	   -1, 1, 1,
+	   0, 1, 2 ], divisor)};
+
+
+	var identityMatrix = {name:"Identity", data:
+	scale([  0, 0, 0,
+	   0, 1, 0,
+	   0, 0, 0 ], divisor)};
+
+
+	var customMatrix = {name:"Custom", data:
+	scale([  0, 0, 0,
+	   0, 0, 0,
+	   0, 0, 0 ], divisor)};
+
+
+
+	 $scope.imgList = [];
+	 $scope.matrixList = [];
+
+	 //for input
+	 $scope.entry = [];
+
+	 //insert matrix
+	 $scope.matrixList.push(blurMatrix);
+	 $scope.matrixList.push(sharpenMatrix);
+	 $scope.matrixList.push(embossMatrix);
+	 $scope.matrixList.push(lightenMatrix);
+	 $scope.matrixList.push(darkenMatrix);
+	 $scope.matrixList.push(edgeDetectMatrix);
+	 $scope.matrixList.push(identityMatrix);
+	 $scope.matrixList.push(customMatrix);
+	 $scope.selectedMatrix = $scope.matrixList[0];
+	 for (var i = 0; i < $scope.selectedMatrix.data.length; i++) {
+ 	 	$scope.entry[i] = $scope.selectedMatrix.data[i];
+ 	 	console.log($scope.entry[i]);
+	 }
+
+ 	document.getElementById("before").onload = function () {  
+ 		render();
+	};
+
+
+	 $scope.updateMatrix = function() {
+	 	console.log("update matrix to " + $scope.selectedMatrix.name);
+ 	 	// $scope.entry = $scope.selectedMatrix.data;
+		 for (var i = 0; i < $scope.selectedMatrix.data.length; i++) {
+	 	 	$scope.entry[i] = $scope.selectedMatrix.data[i];
+		 }
+	 	console.log($scope.matrixList);
+	 	render();
+	 }
+	 //insert image
+	 $scope.imgList.push({name:"Bell", src:"bell.jpg"});
+	 $scope.imgList.push({name:"Man", src:"man.jpg"});
+	 $scope.imgList.push({name:"Bridge", src:"bridge.jpg"});
+	 $scope.imgList.push({name:"Building", src:"building.jpg"});
+
+
+	 $scope.selectedImg = $scope.imgList[0];
+
+
+	 $scope.updateImg = function() {
+	 	console.log($scope.selectedImg.src);
+	 	document.getElementById("before").onload = function () {  
+	 		render();
+    	};
+	 }
+
+
+
+
+
+
+	 $scope.entryChange = function() {
+	 	//first store the current entry to custom matrix
+	 	for (var i = 0; i < $scope.entry.length; i++) {
+			$scope.matrixList[$scope.matrixList.length - 1].data[i] = $scope.entry[i];
+	 	}
+	 	//second change the selected matrix to custom
+	 	$scope.selectedMatrix = $scope.matrixList[$scope.matrixList.length - 1];
+	 	render();
+	 }
+
+	var inputMatrix = new Float32Array(10000);
+	for (var i = 0; i < inputMatrix.length; i++) {
+		inputMatrix[i] = 1/10000;
+	}
+
+	function render() {
+
+		var myImg = document.getElementById("before");
+		// var inputMatrix = [];
+		// for (var i = 0; i < $scope.selectedMatrix.data.length; i++) {
+		// 	inputMatrix[i] = $scope.selectedMatrix.data[i] / divisor;
+		// }
+
+		console.time("render");
+		var idata = Filters.filterImage(Filters.convolute, myImg, inputMatrix);
+
+		// var testCanvas = document.createElement('canvas');
+  //       var testContest = testCanvas.getContext('2d');
+  //       testContest.drawImage(myImg, 0, 0, 100, 100);
+  //       var myOldImgData = testContest.getImageData(0, 0, 100, 100);
+
+  //      	// console.log(myOldImgData);
+  //      	var greyMatrix = getGrey(myOldImgData);
+  //      	console.log(greyMatrix.length);
+
+		// var conv = Filters.myConvolute(greyMatrix, inputMatrix);
+  //      	var myNewImgDataData = convertToImgData(conv);	
+
+		// var testCanvas2 = document.createElement('canvas');
+  //       var testContest2 = testCanvas2.getContext('2d');
+  //       var myNewImgData = testContest2.createImageData(100, 100);
+  //       myNewImgData.data.set(myNewImgDataData);
+  //       // console.log(myNewImgData);
+
+		// var c = document.getElementById('after');
+		// var ctx = c.getContext("2d");
+		// ctx.putImageData(myNewImgData, 0, 0);
+
+
+		console.timeEnd("render");
+
+		var c = document.getElementById('after');
+
+		c.width = idata.width;
+		c.height = idata.height;
+		var ctx = c.getContext("2d");
+		ctx.putImageData(idata, 0 , 0);
+	}
+
+    function getGrey(imageData) {
+    	var width = imageData.width;
+    	var height = imageData.height;
+        var greyMatrix = new Uint8ClampedArray(width*height);
+        for (var i = 0; i < width * height * 4; i += 4) {                 
+            var r = imageData.data[i + 0];
+            var g = imageData.data[i + 1];
+            var b = imageData.data[i + 2];
+            var avg = (r + g + b) /3;
+            greyMatrix[i>>2] = avg;
+        }
+        return greyMatrix;
+    }
+
+
+    function convertToImgData(greyMatrix) {
+    	var retLen = greyMatrix.length * 4;
+        var retData = new Uint8Array(retLen);
+
+        for (var i = 0; i < retLen; i += 4) {   
+        	var curValue = greyMatrix[i/4];              
+        	retData[i] = curValue;
+        	retData[i + 1] = curValue;
+        	retData[i + 2] = curValue;
+        	retData[i + 3] = 255;
+        }
+
+        return retData;
+    }
+
+}
+
+
+</script>
+</body>
+</html>

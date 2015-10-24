@@ -1,0 +1,413 @@
+<!-- index.html -->
+<!doctype html>
+<html>
+<head>
+  <title>Angular Forms</title>
+	<!-- LOAD BOOTSTRAP CSS -->
+	<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css">
+
+	<!-- LOAD JQUERY -->
+	<!-- when building an angular app, you generally DO NOT want to use jquery -->
+	<!-- we are breaking this rule here because jQuery's $.param will help us send data to our PHP script so that PHP can recognize it -->
+	<!-- this is jQuery's only use. avoid it in Angular apps and if anyone has tips on how to send data to a PHP script w/o jQuery, please state it in the comments -->
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+	<!-- LOAD ANGULAR -->
+	<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.0/angular.min.js"></script>
+
+	<!-- LOAD camanjs CDN -->
+
+	<script src="http://cdnjs.cloudflare.com/ajax/libs/camanjs/4.0.0/caman.full.min.js"></script>
+
+
+	<script src="operations.js"></script>
+	<script src="jsfft-corban.js"></script>
+
+
+	<style type="text/css">
+
+
+	img, canvas {
+		width: 256px;
+		height: 256px;
+	}
+	.section {
+    	border-radius: 3px;
+    	border:1px solid #d3d3d3;
+    	width: 280px;
+    	height: 640px;
+    	/*background-color: grey;*/
+	}
+
+	.floatElement {
+		float: left;
+		margin: 5px 12px;
+	}
+
+	#img1Section {
+		position: absolute;
+		left: 10px;
+	}
+
+	#img2Section {
+		position: absolute;
+		left: 300px;
+	}
+
+	#controlSection {
+		position: absolute;
+		left: 590px;
+	}
+
+	#outputSection {
+		position: absolute;
+		left: 880px;
+	}
+
+	#ld1Btn, #ld2Btn {
+		margin: 20px 40px;
+		width: 200px;
+		height: 100px
+	}
+
+
+	#computeMethod, #inputGp {
+		margin: 20px 40px;
+	}
+
+	#computeBtn, #resetBtn {
+		margin: 20px 40px;
+		width: 200px;
+		height: 50px
+	}
+
+	</style>
+
+</head>
+<body ng-app="myApp" ng-controller="myController">
+
+<div class="container">
+	<div id="img1Section" class="section">
+		<div id="img1Block" class="floatElement">
+			<h5>Input Image 1</h5>
+			<canvas id="Img1" width="256" height="256"/></cavas>
+		</div>
+
+		<div id="ftImg1Block" class="floatElement">
+			<h5>Fourier Transform of image 1</h5>
+			<canvas id="fftImg1" width="256" height="256"></canvas>
+		</div>
+	</div>
+
+	<div id="img2Section" class="section">
+		<div id="img2Block" class="floatElement">
+			<h5>Input Image 2</h5>
+			<canvas id="Img2" width="256" height="256"/></cavas>
+		</div>
+
+		<div id="ftImg2Block" class="floatElement">
+			<h5>Fourier Transform of image 2</h5>
+			<canvas id="fftImg2" width="256" height="256"></canvas>
+		</div>
+	</div>
+
+	<div id="controlSection" class="section">
+
+		<button id="ld1Btn" class="btn" ng-click="loadImg1()">Load Image 1</button>
+		<button id="ld2Btn" class="btn" ng-click="loadImg2()">Load Image 2</button>
+		<div id="computeMethod">
+			<label>Choose Image Operations...</label>
+			<select 
+				ng-options="operation.name for operation in operationList" 
+				ng-model="selectedOperation"
+				ng-change=""
+				class="form-control">
+			</select>
+		</div>
+
+		<div id="inputGp" class="input-group">
+			<span class="input-group-addon" id="basic-addon">parameter</span>
+			<input class="form-control" type="number" ng-model="param" ng-change="">
+		</div>
+
+
+
+		<button id="computeBtn" class="btn" ng-click="compute()">Compute</button>
+		<button id="resetBtn" class="btn" ng-click="reset()">Reset(to original image 1)</button>
+	</div>
+
+	<div id="outputSection" class="section">
+		<div id="outputBlock" class="floatElement">
+			<h5>Output Image</h5>
+			<canvas id="output" width="256" height="256"/></canvas>
+		</div>
+
+		<div id="ftOutputBlock" class="floatElement">
+			<h5>Fourier Transform of Output Image</h5>
+			<canvas id="fftOutput" width="256" height="256"></canvas>
+		</div>
+	</div>
+
+</div>
+
+	
+
+<script>
+// ng-app="formApp" ng-controller="formController"
+<!-- WE WILL PROCESS OUR FORM HERE -->
+// define angular module/app
+var myApp = angular.module('myApp', []);
+
+// create angular controller and pass in $scope and $http
+function myController($scope) {
+	 //global variable to store the grey image data of two inputs(img1, img2)
+	 var greyMatrix1;
+	 var greyMatrix2;
+
+	 var fftMatrix1;
+	 var fftMatrix2;
+
+	 var outputMatrix;
+	 var fftOutputMatrix;
+
+	 var imageData1;
+	 var imageData2;
+
+	 var width = 256;
+	 var height = 256;
+
+	 var fftC1 = document.getElementById("fftImg1");
+	 var fftC2 = document.getElementById("fftImg2");
+	 var fftCx1 = fftC1.getContext('2d');
+	 var fftCx2 = fftC2.getContext('2d');
+
+	 var output = document.getElementById("output");
+	 var fftOutput = document.getElementById("fftOutput");
+	 var outputCx = output.getContext('2d');
+	 var fftOutputCx = fftOutput.getContext('2d');
+
+	 $scope.param;
+
+	 var img1 = new Image();
+	 img1.onload = function() {
+	 	greyMatrix1 = getGrey(img1);
+	 	imageData1 = new ImageData(convertToImgData(greyMatrix1), width, height);
+
+	 	var ctx1 = document.getElementById("Img1")
+	 	.getContext('2d');
+
+	 	ctx1.putImageData(imageData1, 0, 0);
+
+
+	 	fftMatrix1 =  fftFromGrey(greyMatrix1, width, height);
+	 	fftCx1.putImageData(new ImageData(convertToImgData(fftMatrix1), width, height), 0, 0);
+
+
+		 var img2 = new Image();
+		 img2.onload = function() {
+		 	greyMatrix2 = getGrey(img2);
+		 	imageData2 = new ImageData(convertToImgData(greyMatrix2), width, height);
+		 	var ctx2 = document.getElementById("Img2")
+		 	.getContext('2d');
+
+		 	ctx2.putImageData(imageData2, 0, 0);
+
+		 	fftMatrix2 =  fftFromGrey(greyMatrix2, width, height);
+		 	fftCx2.putImageData(new ImageData(convertToImgData(fftMatrix2), width, height), 0, 0);
+
+		 	//default to reset
+		 	$scope.reset();
+		} 
+
+		 img2.src = "lena.png";
+	 }
+
+	 img1.src = "cameraman.png";
+
+	 $scope.compute = function() {
+		console.log( $scope.param);
+
+		outputMatrix = $scope.selectedOperation.operation(greyMatrix1, greyMatrix1, $scope.param, null);
+
+		if (outputMatrix) {
+			outputCx.putImageData(new ImageData(convertToImgData(outputMatrix), width, height), 0, 0);
+
+			fftOutputMatrix =  fftFromGrey(outputMatrix, width, height);
+			fftOutputCx.putImageData(new ImageData(convertToImgData(fftOutputMatrix), width, height), 0, 0);
+		}
+	 }
+
+	 $scope.reset = function() {
+		console.log( $scope.param);
+		 //default output
+		 outputMatrix = greyMatrix1;
+		 outputCx.putImageData(new ImageData(convertToImgData(outputMatrix), width, height), 0, 0);
+
+		 fftOutputMatrix =  fftFromGrey(outputMatrix, width, height);
+		 fftOutputCx.putImageData(new ImageData(convertToImgData(fftOutputMatrix), width, height), 0, 0);
+	 }
+
+	$scope.operationList = [
+	{
+		name: 'Multiplication by a constant value',
+		operation: MyOperations.multiConstant
+		// (greyMatrix1, $scope.param)
+	},
+	{
+		name: 'Power of a constant value',
+		operation: MyOperations.powConstant
+	},
+	{
+		name: 'Negation',
+	  	operation: {}
+	},
+	{
+		name: 'Translation',
+	  	operation: {}
+	},
+	{
+		name: 'Rotation',
+	  	operation: {}
+	},
+	{
+		name: 'Transpotation',
+	  	operation: {}
+	},
+	{name: 'Reflection horizontally',
+	  operation: {}
+	},
+	{
+		name: 'Addition',
+	  	operation: {}
+	},
+	{
+		name: 'Substraction',
+	 	operation: {}
+	},
+	{
+		name: 'Multiplication by image 2 (+normalization)',
+	 	operation: {}
+	},
+	{	name: 'convolution(+normalization)',
+	  	operation: {}
+	},
+	{	
+		name: 'Bitwise AND',
+		operation: {}
+	},
+	{
+		name: 'Bitwist OR',
+	  	operation: {}
+	},];
+
+	$scope.selectedOperation = $scope.operationList[0];
+
+
+
+    var getGrey = function (img) {
+    	var tempCanvas = document.createElement('canvas');
+    	var width = img.width;
+    	var height = img.height;
+    	tempCanvas.width = width;
+    	tempCanvas.height = height;
+    	tempCanvas.getContext('2d').drawImage(img, 0, 0, width, height);
+
+    	var imgData = tempCanvas.getContext('2d').getImageData(0, 0, width, height).data;
+
+
+        var greyMatrix = new Uint8ClampedArray(width*height);
+        for (var i = 0; i < width * height * 4; i += 4) {                 
+            var r = imgData[i + 0];
+            var g = imgData[i + 1];
+            var b = imgData[i + 2];
+            var avg = (r + g + b) /3;
+            greyMatrix[i>>2] = avg;
+        }
+        return greyMatrix;
+    }
+
+
+    var convertToImgData = function(greyMatrix) {
+    	var retLen = greyMatrix.length * 4;
+        var retData = new Uint8ClampedArray(retLen);
+
+        for (var i = 0; i < greyMatrix.length; i ++) {   
+        	var curValue = greyMatrix[i];              
+        	retData[i * 4 + 0] = curValue;
+        	retData[i * 4 + 1] = curValue;
+        	retData[i * 4 + 2] = curValue;
+        	retData[i * 4 + 3] = 255;
+        }
+        return retData;
+    }
+
+
+	function fftFromGrey(greyMatrix, cw, ch) {
+
+		var retArray = new Uint8ClampedArray(greyMatrix.length);
+
+	    var res_real, res_imag;
+
+	    var fft = new FFT(cw, 32);
+
+	    var fftres_real = new FFT_ArrayType32(cw*ch);
+	    var fftres_imag = new FFT_ArrayType32(cw*ch);
+
+	    for (var i = 0; i < cw*ch; ++i) {
+		fftres_real[i] = greyMatrix[i] / 255.0;
+	    }
+
+	    var i, j;
+
+	    for (j = 0; j < ch; ++j) {
+		var row = new FFT_ArrayType32(fftres_real.buffer, j*cw*4, cw);
+		var irow = new FFT_ArrayType32(fftres_imag.buffer, j*cw*4, cw);
+
+		fft.forward(row, irow);
+
+		for (i = 0; i < cw; ++i) {
+		    row[i] = fft.real[i];
+		    irow[i] = fft.imag[i];
+		}
+	    }
+
+	    var col = new FFT_ArrayType32(ch);
+	    var icol = new FFT_ArrayType32(ch);
+
+	    for (i = 0; i < cw; ++i) {
+		for (j = 0; j < ch; ++j) {
+		    col[j] = fftres_real[j*cw+i];
+		    icol[j] = fftres_imag[j*cw+i];
+		}
+
+		fft.forward(col, icol);
+
+		for (j = 0; j < ch; ++j) {
+		    fftres_real[j*cw+i] = fft.real[j];
+		    fftres_imag[j*cw+i] = fft.imag[j];
+		}
+	    }
+
+	    /* now put back the data */
+	    for (var j = 0; j < ch; ++j) {
+		for (var i = 0; i < cw; ++i) {
+		    var rk = fftres_real[j*cw+i];
+		    var ik = fftres_imag[j*cw+i];
+
+		    var v = Math.floor(2*Math.sqrt(rk*rk+ik*ik)/cw * 255.0);
+
+		    var x = (i + cw/2) % cw;
+		    var y = (j + ch/2) % ch;
+
+		    var k = (y*cw+x);
+
+		    retArray[k] = v;
+		}
+	    }
+	    return retArray;
+	}
+}
+
+
+</script>
+</body>
+</html>
