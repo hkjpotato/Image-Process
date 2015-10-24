@@ -37,24 +37,43 @@ MyOperations.powConstant = function(inputMatrix1, inputMatrix2, param1, param2) 
 	return result;
 }
 
+
+MyOperations.negation = function(inputMatrix1, inputMatrix2, param1, param2) {
+	var len = inputMatrix1.length;
+	var result = new Uint8ClampedArray(len);
+	for (var i = 0; i < len; i++) {
+		result[i] = 255 - inputMatrix1[i]
+	}
+	return result;
+}
+
+
 MyOperations.bitAdd = function(inputMatrix1, inputMatrix2, param1, param2) {
 	var len = inputMatrix1.length;
-	var bit1 = getBit(inputMatrix1);
-	var bit2 = getBit(inputMatrix2);
+	var bit1 = MyOperations.getBit(inputMatrix1);
+	var bit2 = MyOperations.getBit(inputMatrix2);
 	var result = new Uint8Array(len);
 	for (var i = 0; i < len; i++) {
-		result[i] = bit1[i] & bit2[i];
+		if (bit1[i] & bit2[i]) {
+			result[i] = 255;
+		} else {
+			result[i] = 0;
+		}
 	}
 	return result;
 }
 
 MyOperations.bitOr = function(inputMatrix1, inputMatrix2, param1, param2) {
 	var len = inputMatrix1.length;
-	var bit1 = getBit(inputMatrix1);
-	var bit2 = getBit(inputMatrix2);
+	var bit1 = MyOperations.getBit(inputMatrix1);
+	var bit2 = MyOperations.getBit(inputMatrix2);
 	var result = new Uint8Array(len);
 	for (var i = 0; i < len; i++) {
-		result[i] = bit1[i] | bit2[i];
+		if (bit1[i] | bit2[i]) {
+			result[i] = 255;
+		} else {
+			result[i] = 0;
+		}
 	}
 	return result;
 }
@@ -63,24 +82,25 @@ MyOperations.bitOr = function(inputMatrix1, inputMatrix2, param1, param2) {
 MyOperations.getBit = function(inputMatrix) {
 	var len = inputMatrix.length;
 	var result = new Uint8Array(len); 
-	var mean = getMean(inputMatrix);
+	var mean = MyOperations.getMean(inputMatrix);
 	for (var i = 0; i <len; i++) {
 		if (inputMatrix[i] >= mean) {
 			result[i] = 1;
 		} else {
 			result[i] = 0;
 		}
+
 	}
 	return result;
 }
 
 MyOperations.getMean = function(inputMatrix) {
 	var len = inputMatrix.length;
-	var sum;
+	var sum = 0;
 	for (var i = 0; i <len; i++) {
 		sum += inputMatrix[i];
 	}
-	return sum/len;
+	return (sum/len);
 }
 
 

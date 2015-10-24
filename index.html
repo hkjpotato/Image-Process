@@ -228,7 +228,7 @@ function myController($scope) {
 	 $scope.compute = function() {
 		console.log( $scope.param);
 
-		outputMatrix = $scope.selectedOperation.operation(greyMatrix1, greyMatrix1, $scope.param, null);
+		outputMatrix = $scope.selectedOperation.operation(greyMatrix1, greyMatrix2, $scope.param, null);
 
 		if (outputMatrix) {
 			outputCx.putImageData(new ImageData(convertToImgData(outputMatrix), width, height), 0, 0);
@@ -260,7 +260,7 @@ function myController($scope) {
 	},
 	{
 		name: 'Negation',
-	  	operation: {}
+	  	operation: MyOperations.negation
 	},
 	{
 		name: 'Translation',
@@ -294,11 +294,11 @@ function myController($scope) {
 	},
 	{	
 		name: 'Bitwise AND',
-		operation: {}
+		operation: MyOperations.bitAdd
 	},
 	{
 		name: 'Bitwist OR',
-	  	operation: {}
+	  	operation: MyOperations.bitOr
 	},];
 
 	$scope.selectedOperation = $scope.operationList[0];
