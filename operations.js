@@ -1,44 +1,34 @@
 MyOperations = {};
 
-MyOperations.multiConstant = function(inputMatrix1, inputMatrix2, param1, param2) {
-	var len = inputMatrix1.length;
-	var result = new Float32Array(len); 
-	for (var i = 0; i <len; i++) {
-		result[i] = inputMatrix1[i] * param1;
-	}
-	return result;
-}
-
-MyOperations.multiConstant = function(inputMatrix1, inputMatrix2, param1, param2) {
-	if (!param1) {
-		alert("Please input valid paramter!");
+MyOperations.multiConstant = function(inputMatrix1, inputMatrix2, param) {
+	if (typeof (param.factor) === "undefined") {
+		alert("Please input valid factor!");
 		return;
 	}
 
 	var len = inputMatrix1.length;
 	var result = new Float32Array(len); 
 	for (var i = 0; i <len; i++) {
-		result[i] = inputMatrix1[i] * param1;
+		result[i] = inputMatrix1[i] * param.factor;
 	}
 	return result;
 }
 
-MyOperations.powConstant = function(inputMatrix1, inputMatrix2, param1, param2) {
-	if (!param1) {
-		alert("Please input valid paramter!");
+MyOperations.powConstant = function(inputMatrix1, inputMatrix2, param) {
+	if (typeof param.factor === "undefined") {
+		alert("Please input valid factor!");
 		return;
 	}
 
 	var len = inputMatrix1.length;
 	var result = new Float32Array(len); 
 	for (var i = 0; i <len; i++) {
-		result[i] = Math.pow(inputMatrix1[i], param1);
+		result[i] = Math.pow(inputMatrix1[i], param.factor);
 	}
 	return result;
 }
 
-
-MyOperations.negation = function(inputMatrix1, inputMatrix2, param1, param2) {
+MyOperations.negation = function(inputMatrix1, inputMatrix2, param) {
 	var len = inputMatrix1.length;
 	var result = new Uint8ClampedArray(len);
 	for (var i = 0; i < len; i++) {
@@ -47,12 +37,176 @@ MyOperations.negation = function(inputMatrix1, inputMatrix2, param1, param2) {
 	return result;
 }
 
+MyOperations.translation = function(inputMatrix1, inputMatrix2, param) {
+	if (typeof (param.x) === "undefined") {
+		alert("Please input valid X!");
+		return;
+	}
+	if (typeof (param.y) === "undefined") {
+		alert("Please input valid Y!");
+		return;
+	}
+	var len = inputMatrix1.length;
+  	var side = Math.round(Math.sqrt(len));
+  	console.log(side);
+	var result = new Uint8ClampedArray(len);
+	for (var y = 0; y < side; y++) { 
+		for (var x = 0; x < side; x++) {
+			var currPos = y * side + x;
+			if (((x + param.x) < side ) && ((y + param.y) < side)) {
+				var currPos = x + y * side;
+				result[currPos + param.x + param.y * side] = inputMatrix1[currPos];
+			}
+		}
+	}
+	return result;
+}
 
-MyOperations.bitAdd = function(inputMatrix1, inputMatrix2, param1, param2) {
+MyOperations.rotation = function(inputMatrix1, inputMatrix2, param) {
+	if (typeof param.angle === "undefined") {
+		alert("Please input valid angle!");
+		return;
+	}
+	var angle = (param.angle % 360) * (Math.PI / 180);
+	var len = inputMatrix1.length;
+  	var side = Math.round(Math.sqrt(len));
+
+  	var centerX = Math.round(side/2) - 1;
+  	var centerY = Math.round(side/2) - 1;
+  	console.log(centerX);
+  	console.log(centerY);
+  	console.log(angle * 2);
+  	console.log(Math.cos(angle));
+  	console.log(Math.sin(angle));
+
+
+	var result = new Float64Array(len);
+	for (var y = 0; y < side; y++) { 
+		for (var x = 0; x < side; x++) {
+			var resX = Math.round(Math.cos(angle) * (x - centerX) - Math.sin(angle) * (y - centerY)) + centerX;
+			var resY = Math.round((Math.sin(angle) * (x - centerX) + Math.cos(angle) * (y - centerY))) + centerY;
+			if (!result[resY * side + resX]) {
+				result[resY * side + resX] = inputMatrix1[y * side + x];
+			}
+		}
+	}
+	console.log("done");
+	return result;
+}
+
+MyOperations.transposition = function(inputMatrix1, inputMatrix2, param) {
+	var len = inputMatrix1.length;
+  	var side = Math.round(Math.sqrt(len));
+  	console.log(side);
+	var result = new Uint8ClampedArray(len);
+	for (var y = 0; y < side; y++) { 
+		for (var x = 0; x < side; x++) {
+			var currPos = y * side + x;
+			var resPos = x * side + y;
+			result[resPos] = inputMatrix1[currPos];
+		}
+	}
+	return result;
+}
+
+MyOperations.reflectHorizon = function(inputMatrix1, inputMatrix2, param) {
+	var len = inputMatrix1.length;
+  	var side = Math.round(Math.sqrt(len));
+  	console.log(side);
+	var result = new Uint8ClampedArray(len);
+	for (var y = 0; y < side; y++) { 
+		for (var x = 0; x < side; x++) {
+			var currPos = y * side + x;
+			var resPos = y * side + (side - 1 - x)
+			result[resPos] = inputMatrix1[currPos];
+		}
+	}
+	return result;
+}
+
+MyOperations.addition = function(inputMatrix1, inputMatrix2, param) {
+	var len = inputMatrix1.length;
+
+	var result = new Uint16Array(len);
+	var maxValue = 0;
+	for (var i = 0; i <len; i++) {
+		result[i] = inputMatrix1[i] + inputMatrix2[i];
+		if (result[i] > maxValue) {
+			maxValue = result[i];
+		}
+	}
+
+	var test = new Int16Array(len);
+	for (var i = 0; i <len; i++) {
+		test[i] = inputMatrix1[i] + inputMatrix2[i];
+	}
+
+	// var equal = true;
+	// for (var i = 0; i <len; i++) {
+	// 	if (test[i] != result[i]) {
+	// 		equal = false;
+	// 	}
+	// }
+
+	for (var i = 0; i <len; i++) {
+		result[i] = 255 + result[i] - maxValue;
+	}
+
+	for (var i = 0; i <len; i++) {
+		test[i] = 255 + test[i] - maxValue;
+	}
+
+
+	// for (var i = 0; i <len; i++) {
+	// 	if (test[i] != result[i]) {
+	// 		equal2 = false;
+	// 		console.log(result[i] + " " + test[i]);
+	// 	}
+	// }
+	return test;
+}
+
+MyOperations.substraction = function(inputMatrix1, inputMatrix2, param) {
+	var len = inputMatrix1.length;
+	var result = new Int16Array(len);
+	var minValue = 0;
+	for (var i = 0; i <len; i++) {
+		result[i] = inputMatrix1[i] - inputMatrix2[i];
+		if (result[i] < minValue) {
+			minValue = result[i];
+		}
+	}
+
+	for (var i = 0; i <len; i++) {
+		result[i] = 0 + (result[i] - minValue);
+	}
+
+	return result;
+}
+
+MyOperations.multiImage2 = function(inputMatrix1, inputMatrix2, param) {
+	var len = inputMatrix1.length;
+	var result = new Float32Array(len);
+	var maxValue = 0;
+	for (var i = 0; i <len; i++) {
+		result[i] = inputMatrix1[i] * inputMatrix2[i];
+		if(result[i] > maxValue) {
+			maxValue = result[i];
+		}
+	}
+
+	for (var i = 0; i <len; i++) {
+		result[i] = result[i]/maxValue * 255;
+	}
+
+	return result;
+}
+
+MyOperations.bitAdd = function(inputMatrix1, inputMatrix2, param) {
 	var len = inputMatrix1.length;
 	var bit1 = MyOperations.getBit(inputMatrix1);
 	var bit2 = MyOperations.getBit(inputMatrix2);
-	var result = new Uint8Array(len);
+	var result = new Uint8ClampedArray(len);
 	for (var i = 0; i < len; i++) {
 		if (bit1[i] & bit2[i]) {
 			result[i] = 255;
@@ -63,11 +217,32 @@ MyOperations.bitAdd = function(inputMatrix1, inputMatrix2, param1, param2) {
 	return result;
 }
 
-MyOperations.bitOr = function(inputMatrix1, inputMatrix2, param1, param2) {
+MyOperations.convolution = function(inputMatrix1, inputMatrix2, param) {
+
+	var result;
+	result = Filters.myConvolute(inputMatrix1, inputMatrix2);
+
+	var maxValue = 0;
+	var len = result.length;
+	for (var i = 0; i < len; i++) {
+		if(result[i] > maxValue) {
+			maxValue = result[i];
+		}
+	}
+
+	for (var i = 0; i <len; i++) {
+		result[i] = result[i]/maxValue * 255;
+	}
+
+	console.log(result);
+	return result;
+}
+
+MyOperations.bitOr = function(inputMatrix1, inputMatrix2, param) {
 	var len = inputMatrix1.length;
 	var bit1 = MyOperations.getBit(inputMatrix1);
 	var bit2 = MyOperations.getBit(inputMatrix2);
-	var result = new Uint8Array(len);
+	var result = new Uint8ClampedArray(len);
 	for (var i = 0; i < len; i++) {
 		if (bit1[i] | bit2[i]) {
 			result[i] = 255;
@@ -77,7 +252,6 @@ MyOperations.bitOr = function(inputMatrix1, inputMatrix2, param1, param2) {
 	}
 	return result;
 }
-
 //helper methods
 MyOperations.getBit = function(inputMatrix) {
 	var len = inputMatrix.length;
@@ -227,10 +401,12 @@ Filters.convolute = function(pixels, weights, opaque) {
 
 
 Filters.myConvolute = function(greyMatrix, weights) {
+  // weights = [1/9,1/9,1/9,1/9,1/9,1/9,1/9, 1/9,1/9];
   var side = Math.round(Math.sqrt(weights.length));
 
   var halfSide = Math.floor(side/2);
 
+  console.log(halfSide);
   var greyLen = greyMatrix.length;
   var sw = Math.sqrt(greyLen);
   var sh = sw;
@@ -238,7 +414,9 @@ Filters.myConvolute = function(greyMatrix, weights) {
   var w = sw;
   var h = sh;
 
-  var retMatrix = new Uint8ClampedArray(greyLen);
+  // var retMatrix = new Uint8ClampedArray(greyLen);
+  var retMatrix = new Float32Array(greyLen);
+
   console.time("matrixLoop");
   for (var y=0; y<h; y++) {
     for (var x=0; x<w; x++) {
