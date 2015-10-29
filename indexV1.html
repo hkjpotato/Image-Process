@@ -1,0 +1,665 @@
+<!-- index.html -->
+<<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Angular Forms</title>
+	<!-- LOAD BOOTSTRAP CSS -->
+	<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css">
+
+	<!-- LOAD JQUERY -->
+	<!-- when building an angular app, you generally DO NOT want to use jquery -->
+	<!-- we are breaking this rule here because jQuery's $.param will help us send data to our PHP script so that PHP can recognize it -->
+	<!-- this is jQuery's only use. avoid it in Angular apps and if anyone has tips on how to send data to a PHP script w/o jQuery, please state it in the comments -->
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+	<!-- LOAD ANGULAR -->
+	<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.0/angular.min.js"></script>
+
+	<!-- LOAD MathJS CDN 
+	<script src="http://cdnjs.cloudflare.com/ajax/libs/mathjs/2.4.0/math.min.js"></script>
+	-->
+	<script src="myMath.js"></script>
+
+
+	<script src="operations.js"></script>
+
+	<script src="jsfft-corban.js"></script>
+
+
+	<style type="text/css">
+
+
+	img, canvas {
+		width: 256px;
+		height: 256px;
+	}
+	.section {
+    	border-radius: 3px;
+    	border:1px solid #d3d3d3;
+    	width: 280px;
+    	height: 640px;
+    	/*background-color: grey;*/
+		margin-top: 20px;
+
+	}
+
+	.floatElement {
+		float: left;
+		margin: 5px 12px;
+	}
+
+	#img1Section {
+		position: absolute;
+		left: 20px;
+	}
+
+	#img2Section {
+		position: absolute;
+		left: 310px;
+	}
+
+	#controlSection {
+		position: absolute;
+		left: 600px;
+	}
+
+	#outputSection {
+		position: absolute;
+		left: 890px;
+	}
+
+	#ld1Btn, #ld2Btn {
+		margin: 20px 40px;
+		width: 200px;
+		height: 50px;
+	}
+
+
+	#computeMethod, #inputGp {
+		margin: 20px 40px;
+	}
+
+	#computeBtn, #resetBtn {
+		margin: 20px 40px;
+		width: 200px;
+		height: 50px
+	}
+
+	.input-group {
+		margin-top: 10px;
+	}
+
+	.btn-file {
+	    position: relative;
+	    margin: 20px 40px;
+	    font-size: 150%;
+	    text-align: center;
+		width: 200px;
+		height: 50px;
+	    overflow: hidden;
+	}
+	.btn-file input[type=file] {
+	    position: absolute;
+	    top: 0;
+	    right: 0;
+	    min-width: 100%;
+	    min-height: 100%;
+	    filter: alpha(opacity=0);
+	    opacity: 0;
+	    outline: none;
+	    background: white;
+	    cursor: inherit;
+	    display: block;
+	}
+
+	</style>
+
+</head>
+<body ng-app="myApp" ng-controller="myController">
+
+<div class="container">
+	<div id="img1Section" class="section">
+		<div id="img1Block" class="floatElement">
+			<h5>Input Image 1</h5>
+			<canvas id="Img1" width="256" height="256"/></cavas>
+		</div>
+
+		<div id="ftImg1Block" class="floatElement">
+			<h5>Fourier Transform of image 1</h5>
+			<canvas id="fftImg1" width="256" height="256"></canvas>
+		</div>
+	</div>
+
+	<div id="img2Section" class="section">
+		<div id="img2Block" class="floatElement">
+			<h5>Input Image 2</h5>
+			<canvas id="Img2" width="256" height="256"/></cavas>
+		</div>
+
+		<div id="ftImg2Block" class="floatElement">
+			<h5>Fourier Transform of image 2</h5>
+			<canvas id="fftImg2" width="256" height="256"></canvas>
+		</div>
+	</div>
+
+	<div id="controlSection" class="section">
+<!-- 		<input type="file" id="img1" name="files[]" multiple />
+ -->
+		<span class="btn btn-primary btn-file">
+		    Load Image 1<input type="file">
+		</span>
+
+		<!-- <button id="ld1Btn" class="btn" ng-click="loadImg1()">Load Image 1</button> -->
+		<button id="ld2Btn" class="btn" ng-click="loadImg2()">Load Image 2</button>
+		<div id="computeMethod">
+			<label>Choose Image Operations...</label>
+			<select 
+				ng-options="operation.name for operation in operationList" 
+				ng-model="selectedOperation"
+				ng-change=""
+				class="form-control">
+			</select>
+		</div>
+
+		<div id="inputGp">
+			<div class="input-group">
+				<span class="input-group-addon" id="basic-addon">Factor</span>
+				<input class="form-control" type="number" ng-model="param.factor" ng-change=""  placeholder="multi/pow">
+			</div>
+
+			<div class="input-group">
+				<span class="input-group-addon" id="basic-addon2">X</span>
+				<input class="form-control" type="number" ng-model="param.x" ng-change="" placeholder="translation X">
+			</div>
+			<div class="input-group">
+				<span class="input-group-addon" id="basic-addon3">Y</span>
+				<input class="form-control" type="number" ng-model="param.y" ng-change="" placeholder="translation Y">
+			</div>
+
+			<div class="input-group">
+				<span class="input-group-addon" id="basic-addon4">Angle</span>
+				<input class="form-control" type="number" ng-model="param.angle" ng-change="" placeholder="rotation(degree)">
+			</div>
+		</div>
+
+
+
+		<button id="computeBtn" class="btn" ng-click="compute()">Compute</button>
+		<button id="resetBtn" class="btn" ng-click="reset()">Reset(to original image 1)</button>
+	</div>
+
+	<div id="outputSection" class="section">
+		<div id="outputBlock" class="floatElement">
+			<h5>Output Image</h5>
+			<canvas id="output" width="256" height="256"/></canvas>
+		</div>
+
+		<div id="ftOutputBlock" class="floatElement">
+			<h5>Fourier Transform of Output Image</h5>
+			<canvas id="fftOutput" width="256" height="256"></canvas>
+		</div>
+	</div>
+
+</div>
+
+
+<script>
+	// Check for the various File API support.
+	if (window.File && window.FileReader && window.FileList && window.Blob) {
+	  // Great success! All the File APIs are supported.
+	} else {
+	  alert('The File APIs are not fully supported in this browser.');
+	}
+
+	function handleFileSelect(evt) {
+		var files = evt.target.files; // FileList object
+
+		// files is a FileList of File objects. List some properties.
+		var output = [];
+		for (var i = 0, f; f = files[i]; i++) {
+		  output.push('<li><strong>', escape(f.name), '</strong> (', f.type || 'n/a', ') - ',
+		              f.size, ' bytes, last modified: ',
+		              f.lastModifiedDate ? f.lastModifiedDate.toLocaleDateString() : 'n/a',
+		              '</li>');
+		}
+		document.getElementById('list').innerHTML = '<ul>' + output.join('') + '</ul>';
+	}
+
+	document.getElementById('img1').addEventListener('change', handleFileSelect, false);
+</script>
+
+<script>
+// ng-app="formApp" ng-controller="formController"
+<!-- WE WILL PROCESS OUR FORM HERE -->
+// define angular module/app
+var myApp = angular.module('myApp', []);
+
+// create angular controller and pass in $scope and $http
+function myController($scope) {
+	 //global variable to store the grey image data of two inputs(img1, img2)
+	 var greyMatrix1;
+	 var greyMatrix2;
+
+	 var fftMatrix1;
+	 var fftMatrix2;
+
+	 var fftMatrix1Real;
+	 var fftMatrix2Real;
+
+	 var outputMatrix;
+	 var fftOutputMatrix;
+
+	 var imageData1;
+	 var imageData2;
+
+	 var width = 256;
+	 var height = 256;
+
+	 var fftC1 = document.getElementById("fftImg1");
+	 var fftC2 = document.getElementById("fftImg2");
+	 var fftCx1 = fftC1.getContext('2d');
+	 var fftCx2 = fftC2.getContext('2d');
+
+	 var output = document.getElementById("output");
+	 var fftOutput = document.getElementById("fftOutput");
+	 var outputCx = output.getContext('2d');
+	 var fftOutputCx = fftOutput.getContext('2d');
+
+	 $scope.param = {};
+
+	 var img1 = new Image();
+	 img1.onload = function() {
+	 	greyMatrix1 = getGrey(img1);
+	 	imageData1 = new ImageData(convertToImgData(greyMatrix1), width, height);
+
+	 	var ctx1 = document.getElementById("Img1")
+	 	.getContext('2d');
+
+	 	ctx1.putImageData(imageData1, 0, 0);
+
+
+	 	fftMatrix1 =  fftFromGrey(greyMatrix1, width, height);
+	 	fftMatrix1Real =  fftFromGreyReal(greyMatrix1, width, height);
+
+
+	 	fftCx1.putImageData(new ImageData(convertToImgData(fftMatrix1), width, height), 0, 0);
+
+
+		 var img2 = new Image();
+		 img2.onload = function() {
+		 	greyMatrix2 = getGrey(img2);
+		 	imageData2 = new ImageData(convertToImgData(greyMatrix2), width, height);
+		 	var ctx2 = document.getElementById("Img2")
+		 	.getContext('2d');
+
+		 	ctx2.putImageData(imageData2, 0, 0);
+
+		 	fftMatrix2 =  fftFromGrey(greyMatrix2, width, height);
+	 		fftMatrix2Real =  fftFromGreyReal(greyMatrix2, width, height);
+
+		 	fftCx2.putImageData(new ImageData(convertToImgData(fftMatrix2), width, height), 0, 0);
+
+		 	//default to reset
+		 	$scope.reset();
+		} 
+
+		 img2.src = "cameraman.png";
+	 }
+
+	 img1.src = "cameraman.png";
+
+	 $scope.compute = function() {
+		console.log( $scope.param);
+
+		outputMatrix = $scope.selectedOperation.operation(greyMatrix1, greyMatrix2, $scope.param);
+
+		if (outputMatrix) {
+			outputCx.clearRect(0, 0, width, height);
+			outputCx.putImageData(new ImageData(convertToImgData(outputMatrix), width, height), 0, 0);
+
+			fftOutputMatrix =  fftFromGrey(outputMatrix, width, height);
+		 	fftOutputCx.clearRect(0, 0, width, height);
+			fftOutputCx.putImageData(new ImageData(convertToImgData(fftOutputMatrix), width, height), 0, 0);
+		}
+	 }
+
+	 $scope.reset = function() {
+		console.log( $scope.param);
+		 //default output
+		 outputMatrix = greyMatrix1;
+		 outputCx.clearRect(0, 0, width, height);
+		 outputCx.putImageData(new ImageData(convertToImgData(outputMatrix), width, height), 0, 0);
+
+		 fftOutputMatrix =  fftFromGrey(outputMatrix, width, height);
+		 fftOutputCx.clearRect(0, 0, width, height);
+		 fftOutputCx.putImageData(new ImageData(convertToImgData(fftOutputMatrix), width, height), 0, 0);
+	 }
+
+	$scope.operationList = [
+	{
+		name: 'Multiplication by a constant value',
+		operation: MyOperations.multiConstant
+		// (greyMatrix1, $scope.param)
+	},
+	{
+		name: 'Power of a constant value',
+		operation: MyOperations.powConstant
+	},
+	{
+		name: 'Negation',
+	  	operation: MyOperations.negation
+	},
+	{
+		name: 'Translation',
+		operation: MyOperations.translation
+	},
+	{
+		name: 'Rotation',
+	  	operation: function(inputMatrix1, inputMatrix2, param) {
+			if (typeof param.angle === "undefined") {
+				alert("Please input valid angle!");
+				return;
+			}
+			var degree = (param.angle % 360) * (Math.PI / 180);
+
+			outputCx.clearRect(0, 0, width, height);
+			outputCx.fillRect(0, 0, width, height);
+
+	  		outputCx.save();
+			// Move registration point to the center of the canvas
+			outputCx.translate(width/2, height/2);
+
+	  		outputCx.rotate(degree);
+
+			outputCx.drawImage(img1, -width/2, -height/2);
+			outputCx.restore();
+
+			var imgData = outputCx.getImageData(0, 0, width, height).data;
+    		// console.log(imgData);
+	        var greyMatrix = new Uint8ClampedArray(width*height);
+	        for (var i = 0; i < width * height * 4; i += 4) {                 
+	            var r = imgData[i + 0];
+	            var g = imgData[i + 1];
+	            var b = imgData[i + 2];
+	            var avg = (r + g + b) /3;
+	            greyMatrix[i>>2] = avg;
+	        }
+	        return greyMatrix;
+	  	}
+	},
+	{
+		name: 'Transposition',
+	  	operation: MyOperations.transposition
+	},
+	{
+		name: 'Reflection horizontally',
+	  operation: MyOperations.reflectHorizon
+	},
+	{
+		name: 'Reflection Vertically',
+	  operation: MyOperations.reflectVertical
+	},
+	{
+		name: 'Addition',
+	  	operation: MyOperations.addition
+	},
+	{
+		name: 'Substraction',
+	 	operation: MyOperations.substraction
+	},
+	{
+		name: 'Multiplication by image 2 (+normalization)',
+	 	operation: MyOperations.multiImage2
+	},
+	{	name: 'convolution(+normalization)',
+	  	operation: MyOperations.convolution
+	  	// operation: function() {
+		 	// //testing
+		 	// console.time("testFFTConv");
+		 	// var tempFFT = new Int32Array(width * height);
+		 	// var fftLen = tempFFT.length;
+		 	// var norm = 255 * 255;
+		 	// for (var i = 0; i < fftLen; i++) {
+		 	// 	tempFFT[i] = fftMatrix1Real[i] * fftMatrix2Real[i];
+		 	// }
+
+		 	// var ret = myHelper.restoreArray(math.inv(myHelper.setMatrix(tempFFT)));
+		 	// // var maxValue = 0;
+		 	// // for (var i = 0; i < fftLen; i++) {
+		 	// // 	if (ret[i] > maxValue) {
+		 	// // 		maxValue = ret[i];
+		 	// // 	}
+		 	// // }
+
+		 	// var mean = MyOperations.getMean(ret);
+
+		 	// for (var i = 0; i < fftLen; i++) {
+		 	// 	// ret[i] = ret[i]/maxValue * 255;
+		 	// 	ret[i] = ret[i]/mean * 255;
+
+		 	// }
+		 	// // console.log(math.inv(myHelper.setMatrix([1, 2, 3, 4])));
+		 	// console.timeEnd("testFFTConv");
+
+		 	// return ret;
+	  	// }
+
+	},
+	{	
+		name: 'Bitwise AND',
+		operation: MyOperations.bitAdd
+	},
+	{
+		name: 'Bitwist OR',
+	  	operation: MyOperations.bitOr
+	},];
+
+	$scope.selectedOperation = $scope.operationList[0];
+
+
+
+    var getGrey = function (img) {
+    	var tempCanvas = document.createElement('canvas');
+    	var width = img.width;
+    	var height = img.height;
+    	tempCanvas.width = width;
+    	tempCanvas.height = height;
+    	tempCanvas.getContext('2d').drawImage(img, 0, 0, width, height);
+
+    	var imgData = tempCanvas.getContext('2d').getImageData(0, 0, width, height).data;
+
+
+        var greyMatrix = new Uint8ClampedArray(width*height);
+        for (var i = 0; i < width * height * 4; i += 4) {                 
+            var r = imgData[i + 0];
+            var g = imgData[i + 1];
+            var b = imgData[i + 2];
+            var avg = (r + g + b) /3;
+            greyMatrix[i>>2] = avg;
+        }
+        return greyMatrix;
+    }
+
+
+    var convertToImgData = function(greyMatrix) {
+    	var retLen = greyMatrix.length * 4;
+        var retData = new Uint8ClampedArray(retLen);
+
+        for (var i = 0; i < greyMatrix.length; i ++) {   
+        	var curValue = greyMatrix[i];              
+        	retData[i * 4 + 0] = curValue;
+        	retData[i * 4 + 1] = curValue;
+        	retData[i * 4 + 2] = curValue;
+        	retData[i * 4 + 3] = 255;
+        }
+        return retData;
+    }
+
+
+	function fftFromGrey(greyMatrix, cw, ch) {
+
+		var retArray = new Uint8ClampedArray(greyMatrix.length);
+
+	    var res_real, res_imag;
+
+	    var fft = new FFT(cw, 32);
+
+	    var fftres_real = new FFT_ArrayType32(cw*ch);
+	    var fftres_imag = new FFT_ArrayType32(cw*ch);
+
+	    for (var i = 0; i < cw*ch; ++i) {
+		fftres_real[i] = greyMatrix[i] / 255.0;
+	    }
+
+	    var i, j;
+
+	    for (j = 0; j < ch; ++j) {
+		var row = new FFT_ArrayType32(fftres_real.buffer, j*cw*4, cw);
+		var irow = new FFT_ArrayType32(fftres_imag.buffer, j*cw*4, cw);
+
+		fft.forward(row, irow);
+
+		for (i = 0; i < cw; ++i) {
+		    row[i] = fft.real[i];
+		    irow[i] = fft.imag[i];
+		}
+	    }
+
+	    var col = new FFT_ArrayType32(ch);
+	    var icol = new FFT_ArrayType32(ch);
+
+	    for (i = 0; i < cw; ++i) {
+		for (j = 0; j < ch; ++j) {
+		    col[j] = fftres_real[j*cw+i];
+		    icol[j] = fftres_imag[j*cw+i];
+		}
+
+		fft.forward(col, icol);
+
+		for (j = 0; j < ch; ++j) {
+		    fftres_real[j*cw+i] = fft.real[j];
+		    fftres_imag[j*cw+i] = fft.imag[j];
+		}
+	    }
+
+	    /* now put back the data */
+	    for (var j = 0; j < ch; ++j) {
+		for (var i = 0; i < cw; ++i) {
+		    var rk = fftres_real[j*cw+i];
+		    var ik = fftres_imag[j*cw+i];
+
+		    var v = Math.floor(2*Math.sqrt(rk*rk+ik*ik)/cw * 255.0);
+
+		    var x = (i + cw/2) % cw;
+		    var y = (j + ch/2) % ch;
+
+		    var k = (y*cw+x);
+
+		    retArray[k] = v;
+		}
+	    }
+	    return retArray;
+	}
+
+
+	function fftFromGreyReal(greyMatrix, cw, ch) {
+
+		var retArray = new Float32Array(greyMatrix.length);
+
+	    var res_real, res_imag;
+
+	    var fft = new FFT(cw, 32);
+
+	    var fftres_real = new FFT_ArrayType32(cw*ch);
+	    var fftres_imag = new FFT_ArrayType32(cw*ch);
+
+	    for (var i = 0; i < cw*ch; ++i) {
+		fftres_real[i] = greyMatrix[i] / 255.0;
+	    }
+
+	    var i, j;
+
+	    for (j = 0; j < ch; ++j) {
+		var row = new FFT_ArrayType32(fftres_real.buffer, j*cw*4, cw);
+		var irow = new FFT_ArrayType32(fftres_imag.buffer, j*cw*4, cw);
+
+		fft.forward(row, irow);
+
+		for (i = 0; i < cw; ++i) {
+		    row[i] = fft.real[i];
+		    irow[i] = fft.imag[i];
+		}
+	    }
+
+	    var col = new FFT_ArrayType32(ch);
+	    var icol = new FFT_ArrayType32(ch);
+
+	    for (i = 0; i < cw; ++i) {
+		for (j = 0; j < ch; ++j) {
+		    col[j] = fftres_real[j*cw+i];
+		    icol[j] = fftres_imag[j*cw+i];
+		}
+
+		fft.forward(col, icol);
+
+		for (j = 0; j < ch; ++j) {
+		    fftres_real[j*cw+i] = fft.real[j];
+		    fftres_imag[j*cw+i] = fft.imag[j];
+		}
+	    }
+
+	    /* now put back the data */
+	    for (var j = 0; j < ch; ++j) {
+		for (var i = 0; i < cw; ++i) {
+		    var rk = fftres_real[j*cw+i];
+		    var ik = fftres_imag[j*cw+i];
+
+		    var v = Math.floor(2*Math.sqrt(rk*rk+ik*ik)/cw * 255.0);
+
+		    var x = (i + cw/2) % cw;
+		    var y = (j + ch/2) % ch;
+
+		    var k = (y*cw+x);
+
+		    retArray[k] = v;
+		}
+	    }
+	    return retArray;
+	}
+
+	var myHelper = {};
+	myHelper.setMatrix = function(inputMatrix) {
+  		var side = Math.round(Math.sqrt(inputMatrix.length));
+		var retMatrix = new Array(side);
+		for (var y = 0; y < side; y++) { 
+			// retMatrix[y] = new Int16Array(side);
+			retMatrix[y] = new Array(side);
+
+			for (var x = 0; x < side; x++) {
+				var currPos = y * side + x;
+				retMatrix[y][x] = inputMatrix[currPos];
+			}
+		}
+		// console.log(retMatrix);
+		return retMatrix;	
+	}
+
+	myHelper.restoreArray = function(inputMatrix) {
+  		var side = inputMatrix.length;
+		var retMatrix = new Float32Array(side * side);
+		for (var y = 0; y < side; y++) { 
+			// retMatrix[y] = new Int16Array(side);
+			for (var x = 0; x < side; x++) {
+				var currPos = y * side + x;
+				retMatrix[currPos] = inputMatrix[y][x];
+			}
+		}
+		// console.log(retMatrix);
+		return retMatrix;	
+	}
+}
+
+
+</script>
+</body>
+</html>

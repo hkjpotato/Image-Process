@@ -1,28 +1,19 @@
 <!-- index.html -->
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
   <title>Angular Forms</title>
 	<!-- LOAD BOOTSTRAP CSS -->
-	
+	<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css">
 
-<!--<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css">  -->
 	<!-- LOAD JQUERY -->
 	<!-- when building an angular app, you generally DO NOT want to use jquery -->
 	<!-- we are breaking this rule here because jQuery's $.param will help us send data to our PHP script so that PHP can recognize it -->
 	<!-- this is jQuery's only use. avoid it in Angular apps and if anyone has tips on how to send data to a PHP script w/o jQuery, please state it in the comments -->
-	<!-- 	<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
-
- -->
-
-<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
-<script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
-<link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet">
-
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
 	<!-- LOAD ANGULAR -->
 	<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.0/angular.min.js"></script>
-
 
 	<!-- LOAD MathJS CDN 
 	<script src="http://cdnjs.cloudflare.com/ajax/libs/mathjs/2.4.0/math.min.js"></script>
@@ -31,12 +22,12 @@
 
 
 	<script src="operations.js"></script>
-	<!-- <script src="jsfft-corban.js"></script> -->
+
+	<script src="jsfft-corban.js"></script>
+
 	<script src="fft.js"></script>
 
 	<style type="text/css">
-
-
 
 
 	img, canvas {
@@ -99,39 +90,29 @@
 		margin-top: 10px;
 	}
 
-
 	.btn-file {
-    position: relative;
-    margin: 20px 40px;
-    font-size: 150%;
-    text-align: center;
-	width: 200px;
-	height: 50px;
-    overflow: hidden;
+	    position: relative;
+	    margin: 20px 40px;
+	    font-size: 150%;
+	    text-align: center;
+		width: 200px;
+		height: 50px;
+	    overflow: hidden;
 	}
-
 	.btn-file input[type=file] {
-	  position: absolute;
-	  top: 0;
-	  right: 0;
-	  min-width: 100%;
-	  min-height: 100%;
-	  font-size: 100px;
-	  text-align: right;
-	  filter: alpha(opacity=0);
-	  opacity: 0;
-	  background: red;
-	  cursor: inherit;
-	  display: block;
+	    position: absolute;
+	    top: 0;
+	    right: 0;
+	    min-width: 100%;
+	    min-height: 100%;
+	    filter: alpha(opacity=0);
+	    opacity: 0;
+	    outline: none;
+	    background: white;
+	    cursor: inherit;
+	    display: block;
 	}
 
-	input[readonly] {
-	  background-color: white !important;
-	  cursor: text !important;
-	}
-	.hided {
-		display: none;
-	}
 	</style>
 
 </head>
@@ -163,19 +144,14 @@
 	</div>
 
 	<div id="controlSection" class="section">
-
-
+<!-- 		<input type="file" id="img1" name="files[]" multiple />
+ -->
 		<span class="btn btn-primary btn-file">
-     		Load Image 1<input type='file' name="Img1" onchange="myReadURL(this);" />
+		    Load Image 1<input type="file">
 		</span>
 
-        <span class="btn btn-primary btn-file">
-     		Load Image 2<input type='file' name="Img2" onchange="myReadURL(this);" />
-        </span>
-
-	    <img id="img1Hided" class="hided" width="256" height="256"/>
-	    <img id="img2Hided" class="hided" width="256" height="256"/>
-
+		<!-- <button id="ld1Btn" class="btn" ng-click="loadImg1()">Load Image 1</button> -->
+		<button id="ld2Btn" class="btn" ng-click="loadImg2()">Load Image 2</button>
 		<div id="computeMethod">
 			<label>Choose Image Operations...</label>
 			<select 
@@ -210,7 +186,7 @@
 
 
 		<button id="computeBtn" class="btn" ng-click="compute()">Compute</button>
-		<button id="resetBtn" class="btn" ng-click="reset()">Reset(to image 1)</button>
+		<button id="resetBtn" class="btn" ng-click="reset()">Reset(to original image 1)</button>
 	</div>
 
 	<div id="outputSection" class="section">
@@ -231,120 +207,26 @@
 <script>
 	// Check for the various File API support.
 	if (window.File && window.FileReader && window.FileList && window.Blob) {
-	  console.log(" Great success! All the File APIs are supported.");
+	  // Great success! All the File APIs are supported.
 	} else {
 	  alert('The File APIs are not fully supported in this browser.');
 	}
 
+	// function handleFileSelect(evt) {
+	// 	var files = evt.target.files; // FileList object
 
-	 var img1 = document.getElementById("img1Hided");
-	 var img2 = document.getElementById("img2Hided");
+	// 	// files is a FileList of File objects. List some properties.
+	// 	var output = [];
+	// 	for (var i = 0, f; f = files[i]; i++) {
+	// 	  output.push('<li><strong>', escape(f.name), '</strong> (', f.type || 'n/a', ') - ',
+	// 	              f.size, ' bytes, last modified: ',
+	// 	              f.lastModifiedDate ? f.lastModifiedDate.toLocaleDateString() : 'n/a',
+	// 	              '</li>');
+	// 	}
+	// 	document.getElementById('list').innerHTML = '<ul>' + output.join('') + '</ul>';
+	// }
 
-	 //global function
-	function normalizeFFT(re, im) {
-		var maxValue = 0;
-		var minValue = 10000000000000;
-		var ret = [];
-		for (var i = 0; i < re.length; i++) {
-			ret[i] = Math.log(Math.sqrt(re[i] * re[i] + im[i] * im[i]));
-			if (ret[i] > maxValue) {
-				maxValue = ret[i];
-			}
-			if (ret[i] < minValue) {
-				minValue = ret[i];
-			}
-		}
-
-		// for (var i = 0; i < re.length; i++) {
-		// 	ret[i] = Math.floor(Math.sqrt(re[i] * re[i] + im[i] * im[i])/(width) * 255.0);
-		// }
-
-		for (var i = 0; i < ret.length; i++) {
-			ret[i] = 255 * (ret[i] - minValue)/(maxValue - minValue);
-		}
-	
-		return ret;
-	}
-
-	var getRe = function(greyMatrix) {
-		var greyLen = greyMatrix.length;
-		var ret = [];
-		for (var i = 0; i < greyLen; i++) {
-			ret[i] = greyMatrix[i];
-		}
-		return ret;
-	}
-
-	var getIm = function(greyMatrix) {
-		var greyLen = greyMatrix.length;
-		var ret = [];
-		for (var i = 0; i < greyLen; i++) {
-			ret[i] = 0.0;
-		}
-		return ret;
-	}
-    var getGrey = function (img) {
-    	var tempCanvas = document.createElement('canvas');
-    	var width = img.width;
-    	var height = img.height;
-    	tempCanvas.width = width;
-    	tempCanvas.height = height;
-    	tempCanvas.getContext('2d').drawImage(img, 0, 0, width, height);
-
-    	var imgData = tempCanvas.getContext('2d').getImageData(0, 0, width, height).data;
-
-
-        var greyMatrix = new Uint8ClampedArray(width*height);
-        for (var i = 0; i < width * height * 4; i += 4) {                 
-            var r = imgData[i + 0];
-            var g = imgData[i + 1];
-            var b = imgData[i + 2];
-            var avg = (r + g + b) /3;
-            greyMatrix[i>>2] = avg;
-        }
-        return greyMatrix;
-    }
-
-
-
-    var convertToImgData = function(greyMatrix) {
-    	var retLen = greyMatrix.length * 4;
-        var retData = new Uint8ClampedArray(retLen);
-
-        for (var i = 0; i < greyMatrix.length; i ++) {   
-        	var curValue = greyMatrix[i];              
-        	retData[i * 4 + 0] = curValue;
-        	retData[i * 4 + 1] = curValue;
-        	retData[i * 4 + 2] = curValue;
-        	retData[i * 4 + 3] = 255;
-        }
-        return retData;
-    }
-
-
-	var myReadURL = function(input) {
-	    if (input.files && input.files[0]) {
-	        var reader = new FileReader();
-	        console.log(input.name);
-
-	        var loadImg;
-	        if (input.name == "Img1") {
-				loadImg = img1;
-	        } else if (input.name == "Img2") {
-				loadImg = img2;
-	        }
-	        reader.onload = function (e) {
-	            loadImg.src ='';
-	            loadImg.src = e.target.result;
-	            // img.src = e.target.result;
-	        };
-
-	        reader.readAsDataURL(input.files[0]);
-	    }
-	}
-
-
-
+	// document.getElementById('img1').addEventListener('change', handleFileSelect, false);
 </script>
 
 <script>
@@ -374,22 +256,10 @@ function myController($scope) {
 	 var width = 256;
 	 var height = 256;
 
-
-	 var re1 = [];
-	 var re2 = [];
-	 var re3 = [];
-	 var im1 = [];
-	 var im2 =[];
-	 var im3 = [];
-
-	// initialize, radix-2 required
-	FFT.init(width);
-	FrequencyFilter.init(width);
-
-	var ctx1 = document.getElementById("Img1")
-	.getContext('2d');
-	var ctx2 = document.getElementById("Img2")
-	.getContext('2d');
+ 	var ctx1 = document.getElementById("Img1")
+ 	.getContext('2d');
+ 	var ctx2 = document.getElementById("Img2")
+ 	.getContext('2d');
 
 	 var fftC1 = document.getElementById("fftImg1");
 	 var fftC2 = document.getElementById("fftImg2");
@@ -404,60 +274,116 @@ function myController($scope) {
 	 $scope.param = {};
 
 
-	 img2.onload = function() {
-		console.log("img2 loaded");
-	 	//draw the grey scale
-	 	greyMatrix2 = getGrey(img2);
-	 	imageData2 = new ImageData(convertToImgData(greyMatrix2), width, height);
-	 	var ctx2 = document.getElementById("Img2")
-	 	.getContext('2d');
+var result = document.querySelector('#output').getContext('2d'),
 
-	 	ctx2.putImageData(imageData2, 0, 0);
+	 img1 = new Image();
+	 img1.onload = function() {
 
-	 	//get re & im for image
-	 	re2 = getRe(greyMatrix2);
-	 	im2 = getIm(greyMatrix2);
+		 var img2 = new Image();
+		 img2.onload = function() {
+				var w = width,
+				  h = height, // w == h
+				  re1 = [],
+				  im1 = [];
+				  re2 = [],
+				  im2 = [];
+				// initialize, radix-2 required
+				FFT.init(w);
+				FrequencyFilter.init(w);
 
-		// 2D-FFT get the fft data
-		FFT.fft2d(re2, im2);
-		// swap quadrant (relocate the origin point)
-		FrequencyFilter.swap(re2, im2);
+				ctx1.drawImage(img1, 0, 0);
+				ctx2.drawImage(img2, 0, 0);
 
-		//get the appropriate fft image data for display
-		fftMatrix2 = normalizeFFT(re2, im2);
+				var src1 = ctx1.getImageData(0, 0, w, h),
+					src2 = ctx2.getImageData(0, 0, w, h),
+				  	data1 = src1.data,
+				  	data2 = src2.data,
+				  	i, p,
+				  	val1,
+				  	val2;
 
-	 	fftCx2.putImageData(new ImageData(convertToImgData(fftMatrix2), width, height), 0, 0);
-	} 
+				//get the grey scale
+				for(var y=0; y<h; y++) {
+					i = y*w;
+					for(var x=0; x<w; x++) {
+					  re1[i + x] = data1[(i << 2) + (x << 2)];
+					  im1[i + x] = 0.0;
+					  re2[i + x] = data2[(i << 2) + (x << 2)];
+					  im2[i + x] = 0.0;
+					}
+				}
+				console.log(re1);
+				// 2D-FFT
+				FFT.fft2d(re1, im1);
+				FFT.fft2d(re2, im2);
+				console.log(re1);
 
-	img1.onload = function() {
-		console.log("img1 loaded");
-		console.log(img1);
+				// swap quadrant (relocate the origin point)
+				FrequencyFilter.swap(re1, im1);
+				FrequencyFilter.swap(re2, im2);
+
+				//multiplication terms by terms on FFT data
+				for (var i = 0; i < re1.length; i++) {
+					var tempRe = re1[i] * re2[i] - im1[i] * im2[i];
+					var tempIm = re1[i] * im2[i] + re2[i] * im1[i];
+					re2[i] = tempRe;
+					im2[i] = tempIm;
+				}
+
+				// // swap quadrant
+				// FrequencyFilter.swap(re1, im1);
+				FrequencyFilter.swap(re2, im2);
+
+				// // 2D-IFFT
+				FFT.ifft2d(re1, im1);
+				FFT.ifft2d(re2, im2);
+
+				//  //make the fft image
+				console.log("real part:");
+
+				console.log(re2);
+				//for image
+				 var maxValue = 0;
+				 var minValue = 10000000000000;
+				 for (var i = 0; i < re2.length; i++) {
+				 	// re2[i] = Math.log(Math.sqrt(re2[i] * re2[i] + im2[i] * im2[i]));
+				 	if (re2[i] > maxValue) {
+				 		maxValue = re2[i];
+				 	}
+				 	if (re2[i] < minValue) {
+				 		minValue = re2[i];
+				 	}
+				 }
+
+				 for (var i = 0; i < re2.length; i++) {
+					re2[i] = 255 * (re2[i] - minValue)/(maxValue - minValue);
+				 }
+
+				//for displaying the image data
+				for(var y=0; y<h; y++) {
+					i = y*w;
+					for(var x=0; x<w; x++) {
+					  val1 = re1[i + x];
+					  val2 = re2[i + x];
+					  p = (i << 2) + (x << 2);
+					  data1[p] = data1[p + 1] = data1[p + 2] = val1;
+					   data1[p + 3] = 255;
+					  data2[p] = data2[p + 1] = data2[p + 2] = val2;
+					   data2[p + 3] = 255;
+
+					}
+				}
+
+				// put result image on the canvas
+				result.putImageData(src2, 0, 0);
 
 
-	 	//draw the grey scale
-		greyMatrix1 = getGrey(img1);
-		imageData1 = new ImageData(convertToImgData(greyMatrix1), width, height);
+		} 
 
-		ctx1.putImageData(imageData1, 0, 0);
+		 img2.src = "cameraman.png";
+	 }
 
-	 	//get re & im for image
-	 	re1 = getRe(greyMatrix1);
-	 	im1 = getIm(greyMatrix1);
-		
-		// 2D-FFT get the fft data
-		FFT.fft2d(re1, im1);
-		FrequencyFilter.swap(re1, im1);
-		fftMatrix1 = normalizeFFT(re1, im1);
-		
-		fftCx1.putImageData(new ImageData(convertToImgData(fftMatrix1), width, height), 0, 0);
- 		$scope.reset();
-
-	}
-
-	img1.src = "cameraman.png";
-	img2.src = "lena.png";
-
- 	//default to reset
+	 img1.src = "cameraman.png";
 
 	 $scope.compute = function() {
 		console.log( $scope.param);
@@ -465,50 +391,63 @@ function myController($scope) {
 		outputMatrix = $scope.selectedOperation.operation(greyMatrix1, greyMatrix2, $scope.param);
 
 		if (outputMatrix) {
-			console.log($scope.selectedOperation.name);
 			outputCx.clearRect(0, 0, width, height);
 			outputCx.putImageData(new ImageData(convertToImgData(outputMatrix), width, height), 0, 0);
 
-		 	//get re & im for output
-		 	re3 = getRe(outputMatrix);
-		 	im3 = getIm(outputMatrix);
-		 	// console.log(re3);
-			// 2D-FFT get the fft data
-			FFT.fft2d(re3, im3);
-			// swap quadrant (relocate the origin point)
-			FrequencyFilter.swap(re3, im3);
-
-
-			//get the appropriate fft image data for display
-			fftOutputMatrix = normalizeFFT(re3, im3);
+			fftOutputMatrix =  fftFromGrey(outputMatrix, width, height);
 		 	fftOutputCx.clearRect(0, 0, width, height);
-		 	fftOutputCx.putImageData(new ImageData(convertToImgData(fftOutputMatrix), width, height), 0, 0);
+			fftOutputCx.putImageData(new ImageData(convertToImgData(fftOutputMatrix), width, height), 0, 0);
 		}
 	 }
 
+	function normalizeRealImage(re) {
+		var maxValue = 0;
+		var minValue = 10000000000000;
+		for (var i = 0; i < re2.length; i++) {
+			re2[i] = ((Math.abs(re2[i]) * (re2[i]) + (im2[i]) * (im2[i])));
+			if (re2[i] > maxValue) {
+				maxValue = re2[i];
+			}
+			if (re2[i] < minValue) {
+				minValue = re2[i];
+			}
+		}
+		for (var i = 0; i < re2.length; i++) {
+			re2[i] = 255 * (re2[i] - minValue)/(maxValue - minValue);
+		}
+	}
+	function normalizeFFT(re, im) {
+		var maxValue = 0;
+		var minValue = 10000000000000;
+		for (var i = 0; i < re2.length; i++) {
+			re2[i] = (Math.log(Math.sqrt(re2[i]) * (re2[i]) + (im2[i]) * (im2[i])));
+			if (re2[i] > maxValue) {
+				maxValue = re2[i];
+			}
+			if (re2[i] < minValue) {
+				minValue = re2[i];
+			}
+		}
+		for (var i = 0; i < re2.length; i++) {
+			re2[i] = 255 * (re2[i] - minValue)/(maxValue - minValue);
+		}
+	}
+
 	 $scope.reset = function() {
-		// console.log( $scope.param);
+		console.log( $scope.param);
 		 //default output
-		 outputMatrix = greyMatrix1;
-		 outputCx.clearRect(0, 0, width, height);
-		 outputCx.putImageData(new ImageData(convertToImgData(outputMatrix), width, height), 0, 0);
+		 // outputMatrix = greyMatrix1;
+		 // outputCx.clearRect(0, 0, width, height);
+		 // outputCx.putImageData(new ImageData(convertToImgData(outputMatrix), width, height), 0, 0);
 
-		 	//get re & im for output
-		 	re3 = getRe(outputMatrix);
-		 	im3 = getIm(outputMatrix);
-
-			// 2D-FFT get the fft data
-			FFT.fft2d(re3, im3);
-
-			// swap quadrant (relocate the origin point)
-			FrequencyFilter.swap(re3, im3);
-
-
-			//get the appropriate fft image data for display
-			fftOutputMatrix = normalizeFFT(re3, im3);
-		 fftOutputCx.clearRect(0, 0, width, height);
-		 fftOutputCx.putImageData(new ImageData(convertToImgData(fftOutputMatrix), width, height), 0, 0);
+		 // fftOutputMatrix =  fftFromGrey(outputMatrix, width, height);
+		 // fftOutputCx.clearRect(0, 0, width, height);
+		 // fftOutputCx.putImageData(new ImageData(convertToImgData(fftOutputMatrix), width, height), 0, 0);
 	 }
+
+
+
+
 
 	$scope.operationList = [
 	{
@@ -546,10 +485,11 @@ function myController($scope) {
 
 	  		outputCx.rotate(degree);
 
-			outputCx.drawImage(img1, -width/2, -height/2, width, height);
+			outputCx.drawImage(img1, -width/2, -height/2);
 			outputCx.restore();
 
 			var imgData = outputCx.getImageData(0, 0, width, height).data;
+    		// console.log(imgData);
 	        var greyMatrix = new Uint8ClampedArray(width*height);
 	        for (var i = 0; i < width * height * 4; i += 4) {                 
 	            var r = imgData[i + 0];
@@ -586,52 +526,36 @@ function myController($scope) {
 	 	operation: MyOperations.multiImage2
 	},
 	{	name: 'convolution(+normalization)',
+	  	// operation: MyOperations.convolution
 	  	operation: function() {
 		 	//testing
 		 	console.time("testFFTConv");
-		 	//get the original unswapped FFT data
-			// FrequencyFilter.swap(re1, im1);
-			// FrequencyFilter.swap(re2, im2);
+		 	var tempFFT = new Int32Array(width * height);
+		 	var fftLen = tempFFT.length;
+		 	var norm = 255 * 255;
+		 	for (var i = 0; i < fftLen; i++) {
+		 		tempFFT[i] = fftMatrix1Real[i] * fftMatrix2Real[i];
+		 	}
 
-			//multiplication terms by terms using the swapped FFT data
-			tempReMatrix = [];
-			tempImMatrix = [];
+		 	var ret = myHelper.restoreArray(math.inv(myHelper.setMatrix(tempFFT)));
+		 	// var maxValue = 0;
+		 	// for (var i = 0; i < fftLen; i++) {
+		 	// 	if (ret[i] > maxValue) {
+		 	// 		maxValue = ret[i];
+		 	// 	}
+		 	// }
 
-			for (var i = 0; i < re1.length; i++) {
-				var tempRe = re1[i] * re2[i] - im1[i] * im2[i];
-				var tempIm = re1[i] * im2[i] + re2[i] * im1[i];
-				tempReMatrix[i] = tempRe;
-				tempImMatrix[i] = tempIm;
-			}
-			
-			//swap to appropriate FFT data before IFFT
-			FrequencyFilter.swap(tempReMatrix, tempImMatrix);
-			//get the ifft
-			FFT.ifft2d(tempReMatrix, tempImMatrix);
+		 	var mean = MyOperations.getMean(ret);
 
-			//do normalization
-			 var maxValue = 0;
-			 var minValue = 10000000000000;
-			 for (var i = 0; i < tempReMatrix.length; i++) {
-			 	// tempReMatrix[i] = Math.log(Math.sqrt(tempReMatrix[i] * tempReMatrix[i] + im2[i] * im2[i]));
-			 	if (tempReMatrix[i] > maxValue) {
-			 		maxValue = tempReMatrix[i];
-			 	}
-			 	if (tempReMatrix[i] < minValue) {
-			 		minValue = tempReMatrix[i];
-			 	}
-			 }
+		 	for (var i = 0; i < fftLen; i++) {
+		 		// ret[i] = ret[i]/maxValue * 255;
+		 		ret[i] = ret[i]/mean * 255;
 
-			 for (var i = 0; i < tempReMatrix.length; i++) {
-				tempReMatrix[i] = 255 * (tempReMatrix[i] - minValue)/(maxValue - minValue);
-			 }
-
-
+		 	}
 		 	// console.log(math.inv(myHelper.setMatrix([1, 2, 3, 4])));
 		 	console.timeEnd("testFFTConv");
-		 	// console.log(re3);
 
-		 	return tempReMatrix;
+		 	return ret;
 	  	}
 
 	},
@@ -646,6 +570,44 @@ function myController($scope) {
 
 	$scope.selectedOperation = $scope.operationList[0];
 
+
+
+    var getGrey = function (img) {
+    	var tempCanvas = document.createElement('canvas');
+    	var width = img.width;
+    	var height = img.height;
+    	tempCanvas.width = width;
+    	tempCanvas.height = height;
+    	tempCanvas.getContext('2d').drawImage(img, 0, 0, width, height);
+
+    	var imgData = tempCanvas.getContext('2d').getImageData(0, 0, width, height).data;
+
+
+        var greyMatrix = new Uint8ClampedArray(width*height);
+        for (var i = 0; i < width * height * 4; i += 4) {                 
+            var r = imgData[i + 0];
+            var g = imgData[i + 1];
+            var b = imgData[i + 2];
+            var avg = (r + g + b) /3;
+            greyMatrix[i>>2] = avg;
+        }
+        return greyMatrix;
+    }
+
+
+    var convertToImgData = function(greyMatrix) {
+    	var retLen = greyMatrix.length * 4;
+        var retData = new Uint8ClampedArray(retLen);
+
+        for (var i = 0; i < greyMatrix.length; i ++) {   
+        	var curValue = greyMatrix[i];              
+        	retData[i * 4 + 0] = curValue;
+        	retData[i * 4 + 1] = curValue;
+        	retData[i * 4 + 2] = curValue;
+        	retData[i * 4 + 3] = 255;
+        }
+        return retData;
+    }
 
 
 	// function fftFromGrey(greyMatrix, cw, ch) {
@@ -779,36 +741,36 @@ function myController($scope) {
 	//     return retArray;
 	// }
 
-	// var myHelper = {};
-	// myHelper.setMatrix = function(inputMatrix) {
- //  		var side = Math.round(Math.sqrt(inputMatrix.length));
-	// 	var retMatrix = new Array(side);
-	// 	for (var y = 0; y < side; y++) { 
-	// 		// retMatrix[y] = new Int16Array(side);
-	// 		retMatrix[y] = new Array(side);
+	var myHelper = {};
+	myHelper.setMatrix = function(inputMatrix) {
+  		var side = Math.round(Math.sqrt(inputMatrix.length));
+		var retMatrix = new Array(side);
+		for (var y = 0; y < side; y++) { 
+			// retMatrix[y] = new Int16Array(side);
+			retMatrix[y] = new Array(side);
 
-	// 		for (var x = 0; x < side; x++) {
-	// 			var currPos = y * side + x;
-	// 			retMatrix[y][x] = inputMatrix[currPos];
-	// 		}
-	// 	}
-	// 	// console.log(retMatrix);
-	// 	return retMatrix;	
-	// }
+			for (var x = 0; x < side; x++) {
+				var currPos = y * side + x;
+				retMatrix[y][x] = inputMatrix[currPos];
+			}
+		}
+		// console.log(retMatrix);
+		return retMatrix;	
+	}
 
-	// myHelper.restoreArray = function(inputMatrix) {
- //  		var side = inputMatrix.length;
-	// 	var retMatrix = new Float32Array(side * side);
-	// 	for (var y = 0; y < side; y++) { 
-	// 		// retMatrix[y] = new Int16Array(side);
-	// 		for (var x = 0; x < side; x++) {
-	// 			var currPos = y * side + x;
-	// 			retMatrix[currPos] = inputMatrix[y][x];
-	// 		}
-	// 	}
-	// 	// console.log(retMatrix);
-	// 	return retMatrix;	
-	// }
+	myHelper.restoreArray = function(inputMatrix) {
+  		var side = inputMatrix.length;
+		var retMatrix = new Float32Array(side * side);
+		for (var y = 0; y < side; y++) { 
+			// retMatrix[y] = new Int16Array(side);
+			for (var x = 0; x < side; x++) {
+				var currPos = y * side + x;
+				retMatrix[currPos] = inputMatrix[y][x];
+			}
+		}
+		// console.log(retMatrix);
+		return retMatrix;	
+	}
 }
 
 

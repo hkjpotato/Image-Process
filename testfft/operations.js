@@ -254,19 +254,15 @@ MyOperations.convolution = function(inputMatrix1, inputMatrix2, param) {
 	result = Filters.myConvolute(inputMatrix1, inputMatrix2);
 
 	var maxValue = 0;
-	var minValue = 100000;
 	var len = result.length;
 	for (var i = 0; i < len; i++) {
 		if(result[i] > maxValue) {
 			maxValue = result[i];
 		}
-		if (result[i] < minValue) {
-			minValue = result[i];
-		}
 	}
-	console.log(result);
+
 	for (var i = 0; i <len; i++) {
-		result[i] = 255 * (result[i] - minValue)/(maxValue - minValue);
+		result[i] = result[i]/maxValue * 255;
 	}
 
 	console.log(result);
@@ -436,20 +432,13 @@ Filters.convolute = function(pixels, weights, opaque) {
 
 
 Filters.myConvolute = function(greyMatrix, weights) {
-  weights = [1/10,1/10,1/10,1/10,1/10,1/10,1/10, 1/10,1/10];
-  console.log("haha");
-  greyMatrix = [3,45,45,10,125,125,125,125,125];
-  // weights = [-1,2,1/4,1/4];
-  // weights = [  -2, -1, 0,
-	 //   -1, 1, 1,
-	 //   0, 1, 2 ];
+  // weights = [1/9,1/9,1/9,1/9,1/9,1/9,1/9, 1/9,1/9];
   var side = Math.round(Math.sqrt(weights.length));
 
   var halfSide = Math.floor(side/2);
 
-  console.log("halfside: " + halfSide);
+  console.log(halfSide);
   var greyLen = greyMatrix.length;
-
   var sw = Math.sqrt(greyLen);
   var sh = sw;
 
@@ -457,7 +446,7 @@ Filters.myConvolute = function(greyMatrix, weights) {
   var h = sh;
 
   // var retMatrix = new Uint8ClampedArray(greyLen);
-  var retMatrix = new Array(greyLen);
+  var retMatrix = new Float32Array(greyLen);
 
   console.time("matrixLoop");
   for (var y=0; y<h; y++) {
