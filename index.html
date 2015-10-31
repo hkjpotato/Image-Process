@@ -129,8 +129,17 @@
 	  background-color: white !important;
 	  cursor: text !important;
 	}
+
 	.hided {
 		display: none;
+	}
+
+	#convoluteInfo {
+		font-size: 100%%;
+		color: #ff3232;
+		margin-top: 0px;
+		margin-left: 40px;
+		margin-bottom: -20px;
 	}
 	</style>
 
@@ -176,12 +185,14 @@
 	    <img id="img1Hided" class="hided" width="256" height="256"/>
 	    <img id="img2Hided" class="hided" width="256" height="256"/>
 
+		<div id="convoluteInfo">{{convoluteInfo}}</div>
+
 		<div id="computeMethod">
 			<label>Choose Image Operations...</label>
 			<select 
 				ng-options="operation.name for operation in operationList" 
 				ng-model="selectedOperation"
-				ng-change=""
+				ng-change="checkOption()"
 				class="form-control">
 			</select>
 		</div>
@@ -382,6 +393,8 @@ function myController($scope) {
 	 var im2 =[];
 	 var im3 = [];
 
+	$scope.convoluteInfo = "";
+
 	// initialize, radix-2 required
 	FFT.init(width);
 	FrequencyFilter.init(width);
@@ -457,8 +470,17 @@ function myController($scope) {
 	img1.src = "cameraman.png";
 	img2.src = "lena.png";
 
- 	//default to reset
 
+
+ 	$scope.checkOption = function() {
+		if($scope.selectedOperation.name == 'Convolution(+normalization)') {
+	  		$scope.convoluteInfo = "Circular convolution using FFT";
+		} else {
+			$scope.convoluteInfo = "";
+		}
+	}
+
+ 	//default to reset
 	 $scope.compute = function() {
 		console.log( $scope.param);
 
@@ -585,7 +607,7 @@ function myController($scope) {
 		name: 'Multiplication by image 2 (+normalization)',
 	 	operation: MyOperations.multiImage2
 	},
-	{	name: 'convolution(+normalization)',
+	{	name: 'Convolution(+normalization)',
 	  	operation: function() {
 		 	//testing
 		 	console.time("testFFTConv");

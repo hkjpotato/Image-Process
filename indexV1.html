@@ -1,5 +1,5 @@
 <!-- index.html -->
-<<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
@@ -90,26 +90,45 @@
 	}
 
 	.btn-file {
-	    position: relative;
-	    margin: 20px 40px;
-	    font-size: 150%;
-	    text-align: center;
-		width: 200px;
-		height: 50px;
-	    overflow: hidden;
+    position: relative;
+    margin: 20px 40px;
+    font-size: 150%;
+    text-align: center;
+	width: 200px;
+	height: 50px;
+    overflow: hidden;
 	}
+
 	.btn-file input[type=file] {
-	    position: absolute;
-	    top: 0;
-	    right: 0;
-	    min-width: 100%;
-	    min-height: 100%;
-	    filter: alpha(opacity=0);
-	    opacity: 0;
-	    outline: none;
-	    background: white;
-	    cursor: inherit;
-	    display: block;
+	  position: absolute;
+	  top: 0;
+	  right: 0;
+	  min-width: 100%;
+	  min-height: 100%;
+	  font-size: 100px;
+	  text-align: right;
+	  filter: alpha(opacity=0);
+	  opacity: 0;
+	  background: red;
+	  cursor: inherit;
+	  display: block;
+	}
+
+	input[readonly] {
+	  background-color: white !important;
+	  cursor: text !important;
+	}
+	
+	.hided {
+		display: none;
+	}
+
+	#convoluteInfo {
+		font-size: 100%%;
+		color: #ff3232;
+		margin-top: -20px;
+		margin-left: 40px;
+		margin-bottom: -20px;
 	}
 
 	</style>
@@ -118,6 +137,7 @@
 <body ng-app="myApp" ng-controller="myController">
 
 <div class="container">
+
 	<div id="img1Section" class="section">
 		<div id="img1Block" class="floatElement">
 			<h5>Input Image 1</h5>
@@ -143,23 +163,29 @@
 	</div>
 
 	<div id="controlSection" class="section">
-<!-- 		<input type="file" id="img1" name="files[]" multiple />
- -->
 		<span class="btn btn-primary btn-file">
-		    Load Image 1<input type="file">
+     		Load Image 1<input type='file' name="Img1" onchange="myReadURL(this);" />
 		</span>
 
-		<!-- <button id="ld1Btn" class="btn" ng-click="loadImg1()">Load Image 1</button> -->
-		<button id="ld2Btn" class="btn" ng-click="loadImg2()">Load Image 2</button>
+        <span class="btn btn-primary btn-file">
+     		Load Image 2<input type='file' name="Img2" onchange="myReadURL(this);" />
+        </span>
+
+	    <img id="img1Hided" class="hided" width="256" height="256"/>
+	    <img id="img2Hided" class="hided" width="256" height="256"/>
+		
+		<div id="convoluteInfo">{{convoluteInfo}}</div>
+
 		<div id="computeMethod">
 			<label>Choose Image Operations...</label>
 			<select 
 				ng-options="operation.name for operation in operationList" 
 				ng-model="selectedOperation"
-				ng-change=""
+				ng-change="checkOption()"
 				class="form-control">
 			</select>
 		</div>
+
 
 		<div id="inputGp">
 			<div class="input-group">
@@ -181,8 +207,6 @@
 				<input class="form-control" type="number" ng-model="param.angle" ng-change="" placeholder="rotation(degree)">
 			</div>
 		</div>
-
-
 
 		<button id="computeBtn" class="btn" ng-click="compute()">Compute</button>
 		<button id="resetBtn" class="btn" ng-click="reset()">Reset(to original image 1)</button>
@@ -211,21 +235,71 @@
 	  alert('The File APIs are not fully supported in this browser.');
 	}
 
-	function handleFileSelect(evt) {
-		var files = evt.target.files; // FileList object
 
-		// files is a FileList of File objects. List some properties.
-		var output = [];
-		for (var i = 0, f; f = files[i]; i++) {
-		  output.push('<li><strong>', escape(f.name), '</strong> (', f.type || 'n/a', ') - ',
-		              f.size, ' bytes, last modified: ',
-		              f.lastModifiedDate ? f.lastModifiedDate.toLocaleDateString() : 'n/a',
-		              '</li>');
-		}
-		document.getElementById('list').innerHTML = '<ul>' + output.join('') + '</ul>';
+
+	 var img1 = document.getElementById("img1Hided");
+	 var img2 = document.getElementById("img2Hided");
+
+	 //global function
+    var getGrey = function (img) {
+    	var tempCanvas = document.createElement('canvas');
+    	var width = img.width;
+    	var height = img.height;
+    	tempCanvas.width = width;
+    	tempCanvas.height = height;
+    	tempCanvas.getContext('2d').drawImage(img, 0, 0, width, height);
+
+    	var imgData = tempCanvas.getContext('2d').getImageData(0, 0, width, height).data;
+
+
+        var greyMatrix = new Uint8ClampedArray(width*height);
+        for (var i = 0; i < width * height * 4; i += 4) {                 
+            var r = imgData[i + 0];
+            var g = imgData[i + 1];
+            var b = imgData[i + 2];
+            var avg = (r + g + b) /3;
+            greyMatrix[i>>2] = avg;
+        }
+        return greyMatrix;
+    }
+
+    var convertToImgData = function(greyMatrix) {
+    	var retLen = greyMatrix.length * 4;
+        var retData = new Uint8ClampedArray(retLen);
+
+        for (var i = 0; i < greyMatrix.length; i ++) {   
+        	var curValue = greyMatrix[i];              
+        	retData[i * 4 + 0] = curValue;
+        	retData[i * 4 + 1] = curValue;
+        	retData[i * 4 + 2] = curValue;
+        	retData[i * 4 + 3] = 255;
+        }
+        return retData;
+    }
+
+
+	var myReadURL = function(input) {
+	    if (input.files && input.files[0]) {
+	        var reader = new FileReader();
+	        console.log(input.name);
+
+	        var loadImg;
+	        if (input.name == "Img1") {
+				loadImg = img1;
+	        } else if (input.name == "Img2") {
+				loadImg = img2;
+	        }
+	        reader.onload = function (e) {
+	            loadImg.src ='';
+	            loadImg.src = e.target.result;
+	            // img.src = e.target.result;
+	        };
+
+	        reader.readAsDataURL(input.files[0]);
+	    }
 	}
 
-	document.getElementById('img1').addEventListener('change', handleFileSelect, false);
+
 </script>
 
 <script>
@@ -267,7 +341,14 @@ function myController($scope) {
 
 	 $scope.param = {};
 
-	 var img1 = new Image();
+	var ctx1 = document.getElementById("Img1")
+	.getContext('2d');
+	var ctx2 = document.getElementById("Img2")
+	.getContext('2d');
+
+	$scope.convoluteInfo = "";
+
+
 	 img1.onload = function() {
 	 	greyMatrix1 = getGrey(img1);
 	 	imageData1 = new ImageData(convertToImgData(greyMatrix1), width, height);
@@ -284,29 +365,35 @@ function myController($scope) {
 
 	 	fftCx1.putImageData(new ImageData(convertToImgData(fftMatrix1), width, height), 0, 0);
 
-
-		 var img2 = new Image();
-		 img2.onload = function() {
-		 	greyMatrix2 = getGrey(img2);
-		 	imageData2 = new ImageData(convertToImgData(greyMatrix2), width, height);
-		 	var ctx2 = document.getElementById("Img2")
-		 	.getContext('2d');
-
-		 	ctx2.putImageData(imageData2, 0, 0);
-
-		 	fftMatrix2 =  fftFromGrey(greyMatrix2, width, height);
-	 		fftMatrix2Real =  fftFromGreyReal(greyMatrix2, width, height);
-
-		 	fftCx2.putImageData(new ImageData(convertToImgData(fftMatrix2), width, height), 0, 0);
-
-		 	//default to reset
-		 	$scope.reset();
-		} 
-
-		 img2.src = "cameraman.png";
+	 	//default to reset
+	 	$scope.reset();
 	 }
 
-	 img1.src = "cameraman.png";
+	 img2.onload = function() {
+	 	greyMatrix2 = getGrey(img2);
+	 	imageData2 = new ImageData(convertToImgData(greyMatrix2), width, height);
+	 	var ctx2 = document.getElementById("Img2")
+	 	.getContext('2d');
+
+	 	ctx2.putImageData(imageData2, 0, 0);
+
+	 	fftMatrix2 =  fftFromGrey(greyMatrix2, width, height);
+ 		fftMatrix2Real =  fftFromGreyReal(greyMatrix2, width, height);
+
+	 	fftCx2.putImageData(new ImageData(convertToImgData(fftMatrix2), width, height), 0, 0);
+	} 
+
+	img2.src = "lena.png";
+
+	img1.src = "cameraman.png";
+
+	$scope.checkOption = function() {
+		if($scope.selectedOperation.name == 'Convolution(+normalization)') {
+	  		$scope.convoluteInfo = "Linear convolution: takes around 20 seconds, please be patient...";
+		} else {
+			$scope.convoluteInfo = "";
+		}
+	}
 
 	 $scope.compute = function() {
 		console.log( $scope.param);
@@ -324,7 +411,7 @@ function myController($scope) {
 	 }
 
 	 $scope.reset = function() {
-		console.log( $scope.param);
+
 		 //default output
 		 outputMatrix = greyMatrix1;
 		 outputCx.clearRect(0, 0, width, height);
@@ -371,7 +458,7 @@ function myController($scope) {
 
 	  		outputCx.rotate(degree);
 
-			outputCx.drawImage(img1, -width/2, -height/2);
+			outputCx.drawImage(img1, -width/2, -height/2, width, height);
 			outputCx.restore();
 
 			var imgData = outputCx.getImageData(0, 0, width, height).data;
@@ -411,39 +498,8 @@ function myController($scope) {
 		name: 'Multiplication by image 2 (+normalization)',
 	 	operation: MyOperations.multiImage2
 	},
-	{	name: 'convolution(+normalization)',
+	{	name: 'Convolution(+normalization)',
 	  	operation: MyOperations.convolution
-	  	// operation: function() {
-		 	// //testing
-		 	// console.time("testFFTConv");
-		 	// var tempFFT = new Int32Array(width * height);
-		 	// var fftLen = tempFFT.length;
-		 	// var norm = 255 * 255;
-		 	// for (var i = 0; i < fftLen; i++) {
-		 	// 	tempFFT[i] = fftMatrix1Real[i] * fftMatrix2Real[i];
-		 	// }
-
-		 	// var ret = myHelper.restoreArray(math.inv(myHelper.setMatrix(tempFFT)));
-		 	// // var maxValue = 0;
-		 	// // for (var i = 0; i < fftLen; i++) {
-		 	// // 	if (ret[i] > maxValue) {
-		 	// // 		maxValue = ret[i];
-		 	// // 	}
-		 	// // }
-
-		 	// var mean = MyOperations.getMean(ret);
-
-		 	// for (var i = 0; i < fftLen; i++) {
-		 	// 	// ret[i] = ret[i]/maxValue * 255;
-		 	// 	ret[i] = ret[i]/mean * 255;
-
-		 	// }
-		 	// // console.log(math.inv(myHelper.setMatrix([1, 2, 3, 4])));
-		 	// console.timeEnd("testFFTConv");
-
-		 	// return ret;
-	  	// }
-
 	},
 	{	
 		name: 'Bitwise AND',
@@ -458,42 +514,6 @@ function myController($scope) {
 
 
 
-    var getGrey = function (img) {
-    	var tempCanvas = document.createElement('canvas');
-    	var width = img.width;
-    	var height = img.height;
-    	tempCanvas.width = width;
-    	tempCanvas.height = height;
-    	tempCanvas.getContext('2d').drawImage(img, 0, 0, width, height);
-
-    	var imgData = tempCanvas.getContext('2d').getImageData(0, 0, width, height).data;
-
-
-        var greyMatrix = new Uint8ClampedArray(width*height);
-        for (var i = 0; i < width * height * 4; i += 4) {                 
-            var r = imgData[i + 0];
-            var g = imgData[i + 1];
-            var b = imgData[i + 2];
-            var avg = (r + g + b) /3;
-            greyMatrix[i>>2] = avg;
-        }
-        return greyMatrix;
-    }
-
-
-    var convertToImgData = function(greyMatrix) {
-    	var retLen = greyMatrix.length * 4;
-        var retData = new Uint8ClampedArray(retLen);
-
-        for (var i = 0; i < greyMatrix.length; i ++) {   
-        	var curValue = greyMatrix[i];              
-        	retData[i * 4 + 0] = curValue;
-        	retData[i * 4 + 1] = curValue;
-        	retData[i * 4 + 2] = curValue;
-        	retData[i * 4 + 3] = 255;
-        }
-        return retData;
-    }
 
 
 	function fftFromGrey(greyMatrix, cw, ch) {
@@ -544,20 +564,41 @@ function myController($scope) {
 
 	    /* now put back the data */
 	    for (var j = 0; j < ch; ++j) {
-		for (var i = 0; i < cw; ++i) {
-		    var rk = fftres_real[j*cw+i];
-		    var ik = fftres_imag[j*cw+i];
+			for (var i = 0; i < cw; ++i) {
+			    var rk = fftres_real[j*cw+i];
+			    var ik = fftres_imag[j*cw+i];
 
-		    var v = Math.floor(2*Math.sqrt(rk*rk+ik*ik)/cw * 255.0);
+			    var v = Math.floor(2*Math.sqrt(rk*rk+ik*ik)/cw * 255.0);
 
-		    var x = (i + cw/2) % cw;
-		    var y = (j + ch/2) % ch;
+			    var x = (i + cw/2) % cw;
+			    var y = (j + ch/2) % ch;
 
-		    var k = (y*cw+x);
+			    var k = (y*cw+x);
 
-		    retArray[k] = v;
-		}
+			    retArray[k] = v;
+			}
 	    }
+
+		// var maxValue = 0;
+		// var minValue = 10000000000000;
+
+	 //    for (var i = 0; i < retArray.length; i++) {
+		// 	 var maxValue = 0;
+		// 	 var minValue = 10000000000000;
+		// 	 for (var i = 0; i < retArray.length; i++) {
+		// 	 	// tempReMatrix[i] = Math.log(Math.sqrt(tempReMatrix[i] * tempReMatrix[i] + im2[i] * im2[i]));
+		// 	 	if (retArray[i] > maxValue) {
+		// 	 		maxValue = retArray[i];
+		// 	 	}
+		// 	 	if (retArray[i] < minValue) {
+		// 	 		minValue = retArray[i];
+		// 	 	}
+		// 	 }
+
+		// 	 for (var i = 0; i < retArray.length; i++) {
+		// 		retArray[i] = 255 * (retArray[i] - minValue)/(maxValue - minValue);
+		// 	 }
+	 //    }
 	    return retArray;
 	}
 

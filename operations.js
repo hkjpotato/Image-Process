@@ -249,7 +249,7 @@ MyOperations.bitAdd = function(inputMatrix1, inputMatrix2, param) {
 }
 
 MyOperations.convolution = function(inputMatrix1, inputMatrix2, param) {
-
+	console.log("testing");
 	var result;
 	result = Filters.myConvolute(inputMatrix1, inputMatrix2);
 
@@ -436,9 +436,9 @@ Filters.convolute = function(pixels, weights, opaque) {
 
 
 Filters.myConvolute = function(greyMatrix, weights) {
-  weights = [1/10,1/10,1/10,1/10,1/10,1/10,1/10, 1/10,1/10];
+  // weights = [1/10,1/10,1/10,1/10,1/10,1/10,1/10, 1/10,1/10];
   console.log("haha");
-  greyMatrix = [3,45,45,10,125,125,125,125,125];
+  // greyMatrix = [3,45,45,10,125,125,125,125,125];
   // weights = [-1,2,1/4,1/4];
   // weights = [  -2, -1, 0,
 	 //   -1, 1, 1,
@@ -456,26 +456,49 @@ Filters.myConvolute = function(greyMatrix, weights) {
   var w = sw;
   var h = sh;
 
-  // var retMatrix = new Uint8ClampedArray(greyLen);
-  var retMatrix = new Array(greyLen);
+  var retMatrix = new Float32Array(greyLen);
+  // var retMatrix = new Array(greyLen);
 
   console.time("matrixLoop");
+  // var outside = 0;
   for (var y=0; y<h; y++) {
     for (var x=0; x<w; x++) {
       var dstOff = y*w+x;
       var r=0;
+
       for (var cy=0; cy<side; cy++) {
         for (var cx=0; cx<side; cx++) {
-          var scy = Math.min(sh-1, Math.max(0, y + cy - halfSide));
-          var scx = Math.min(sw-1, Math.max(0, x + cx - halfSide));
-          var srcOff = (scy*sw+scx);
-          var wt = weights[cy*side+cx];
-          r += greyMatrix[srcOff] * wt;
+        	var scy = y + cy - halfSide;
+	        var scx = x + cx - halfSide;
+        	// var scy = Math.min(sh-1, Math.max(0, y + cy - halfSide));
+	        // var scx = Math.min(sw-1, Math.max(0, x + cx - halfSide));
+	        // var srcOff = (scy*sw+scx);
+	        // var wt = weights[cy*side+cx];
+	        // r += greyMatrix[srcOff] * wt;
+	        var upperLimit = sh -1;
+        	// if ((scy <= upperLimit) && (scx <= upperLimit) && (scx >= 0) && (scx >= 0)) {
+        	//   // var scy = Math.min(sh-1, Math.max(0, y + cy - halfSide));
+	        //   // var scx = Math.min(sw-1, Math.max(0, x + cx - halfSide));
+	        //   var srcOff = (scy*sw+scx);
+	        //   var wt = weights[cy*side+cx];
+	        //   r += greyMatrix[srcOff] * wt;
+        	// }
+
+        	var check = (scy <= upperLimit) & (scx <= upperLimit) & (scy >= 0) & (scx >= 0);
+        	// console.log(check);
+        	if (check) {
+	          var srcOff = (scy*sw+scx);
+	          var wt = weights[cy*side+cx];
+	          // console.log(wt);
+	          r += greyMatrix[srcOff] * wt;
+        	} 
         }
       }
       retMatrix[dstOff] = r;
     }
   }
+  // console.log(outside);
+
   console.timeEnd("matrixLoop");
 
   return retMatrix;

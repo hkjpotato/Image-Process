@@ -28,6 +28,7 @@
   var core = {
     init : function(n) {
       if(n !== 0 && (n & (n - 1)) === 0) {
+        console.log("n is " + n);
         _n = n;
         core._initArray();
         core._makeBitReversalTable();
