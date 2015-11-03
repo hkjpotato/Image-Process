@@ -2,7 +2,6 @@
  * Fast Fourier Transform module
  * 1D-FFT/IFFT, 2D-FFT/IFFT (radix-2)
  */
-
 (function() {
   var FFT;           // top-level namespace
   var _root = this;  // reference to 'window' or 'global'

@@ -53,6 +53,20 @@
 
 	}
 
+	.section2 {
+    	border-radius: 3px;
+    	border:1px solid #d3d3d3;
+    	width: 280px;
+    	height: 640px;
+    	/*background-color: grey;*/
+		margin-top: 20px;
+
+	}
+
+	.label {
+
+	}
+
 	.floatElement {
 		float: left;
 		margin: 5px 12px;
@@ -78,35 +92,44 @@
 		left: 890px;
 	}
 
-	#ld1Btn, #ld2Btn {
-		margin: 20px 40px;
+/*	#ld1Btn, #ld2Btn {
+		margin: 10px 20px 10px;
 		width: 200px;
-		height: 50px;
+		height: 40px;
 	}
-
+*/
 
 	#computeMethod, #inputGp {
-		margin: 20px 40px;
+		margin: 30px 40px 10px;
 	}
 
 	#computeBtn, #resetBtn {
-		margin: 20px 40px;
+		margin: 18px 40px 2px;
 		width: 200px;
-		height: 50px
+		height: 40px
 	}
 
 	.input-group {
-		margin-top: 10px;
+		margin-top: 15px;
 	}
 
+	.input-group .inner {
+		margin-top: 0px;
+	}
+	.input-group .inner2 {
+		margin-top: 5px;
+	}
+	.label {
+		font-size: 80%;
+	}
 
 	.btn-file {
     position: relative;
-    margin: 20px 40px;
+    margin: 10px 40px;
     font-size: 150%;
     text-align: center;
 	width: 200px;
-	height: 50px;
+	height: 45px;
     overflow: hidden;
 	}
 
@@ -140,6 +163,9 @@
 		margin-top: 0px;
 		margin-left: 40px;
 		margin-bottom: -20px;
+		height: 30px;
+		width: 220px;
+		/*background: grey;*/
 	}
 	</style>
 
@@ -171,7 +197,7 @@
 		</div>
 	</div>
 
-	<div id="controlSection" class="section">
+	<div id="controlSection" class="section2">
 
 
 		<span class="btn btn-primary btn-file">
@@ -199,29 +225,38 @@
 
 		<div id="inputGp">
 			<div class="input-group">
-				<span class="input-group-addon" id="basic-addon">Factor</span>
-				<input class="form-control" type="number" ng-model="param.factor" ng-change=""  placeholder="multi/pow">
+				<label>For Multiplication & Power:</label>
+				<div class="input-group inner">
+					<span class="input-group-addon" id="basic-addon">Factor</span>
+					<input class="form-control" type="number" ng-model="param.factor" ng-change=""  placeholder="">
+				</div>
 			</div>
 
 			<div class="input-group">
-				<span class="input-group-addon" id="basic-addon2">X</span>
-				<input class="form-control" type="number" ng-model="param.x" ng-change="" placeholder="translation X">
-			</div>
-			<div class="input-group">
-				<span class="input-group-addon" id="basic-addon3">Y</span>
-				<input class="form-control" type="number" ng-model="param.y" ng-change="" placeholder="translation Y">
+				<label>For Translation (in pixel):</label>
+				<div class="input-group inner">
+					<span class="input-group-addon" id="basic-addon2">Translate X</span>
+					<input class="form-control" type="number" ng-model="param.x" ng-change="" placeholder="">
+				</div>
+				<div class="input-group inner2">
+					<span class="input-group-addon" id="basic-addon3">Translate Y</span>
+					<input class="form-control" type="number" ng-model="param.y" ng-change="" placeholder="">
+				</div>
 			</div>
 
 			<div class="input-group">
-				<span class="input-group-addon" id="basic-addon4">Angle</span>
-				<input class="form-control" type="number" ng-model="param.angle" ng-change="" placeholder="rotation(degree)">
+				<label>For Rotation (in degree):</label>
+				<div class="input-group inner">
+					<span class="input-group-addon" id="basic-addon4">Angle</span>
+					<input class="form-control" type="number" ng-model="param.angle" ng-change="" placeholder="">
+				</div>
 			</div>
 		</div>
 
 
 
-		<button id="computeBtn" class="btn" ng-click="compute()">Compute</button>
-		<button id="resetBtn" class="btn" ng-click="reset()">Reset(to image 1)</button>
+		<button id="computeBtn" class="btn btn-success" ng-click="compute()">Compute</button>
+		<button id="resetBtn" class="btn btn" ng-click="reset()">Reset (to Image 1)</button>
 	</div>
 
 	<div id="outputSection" class="section">
@@ -473,8 +508,10 @@ function myController($scope) {
 
 
  	$scope.checkOption = function() {
-		if($scope.selectedOperation.name == 'Convolution(+normalization)') {
+		if($scope.selectedOperation.name == 'Convolution(Circular+normalization)') {
 	  		$scope.convoluteInfo = "Circular convolution using FFT";
+		} else if ($scope.selectedOperation.name == 'Convolution(Linear+normalization)') {
+	  		$scope.convoluteInfo = "Linear convolution: takes around 20 seconds, please be patient...";
 		} else {
 			$scope.convoluteInfo = "";
 		}
@@ -607,7 +644,7 @@ function myController($scope) {
 		name: 'Multiplication by image 2 (+normalization)',
 	 	operation: MyOperations.multiImage2
 	},
-	{	name: 'Convolution(+normalization)',
+	{	name: 'Convolution(Circular+normalization)',
 	  	operation: function() {
 		 	//testing
 		 	console.time("testFFTConv");
@@ -655,6 +692,10 @@ function myController($scope) {
 
 		 	return tempReMatrix;
 	  	}
+
+	},
+	{	name: 'Convolution(Linear+normalization)',
+	  	operation: MyOperations.convolution
 
 	},
 	{	

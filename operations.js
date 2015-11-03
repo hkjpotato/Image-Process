@@ -268,7 +268,6 @@ MyOperations.convolution = function(inputMatrix1, inputMatrix2, param) {
 	for (var i = 0; i <len; i++) {
 		result[i] = 255 * (result[i] - minValue)/(maxValue - minValue);
 	}
-
 	console.log(result);
 	return result;
 }
